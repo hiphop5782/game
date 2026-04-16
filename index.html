@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재미있는 미니게임 모음</title>
+    <meta name="description" content="6살 아이를 위한 재미있는 국기 맞추기, 시계 읽기 미니게임 웹사이트입니다.">
+    <!-- Google Fonts: 아이들이 읽기 편하고 둥글둥글한 Fredoka 폰트 적용 -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Flag Icons (CDN): 국기 아이콘 렌더링에 사용 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"/>
+    
+    <style>
+        /* 
+          디자인 가이드라인 반영 사항
+          - 파스텔 톤의 화사한 배경색과 버튼 색상
+          - 둥글고 큰(UI) 컴포넌트
+          - 큼직한 텍스트
+        */
+        :root {
+            /* 파스텔 톤 색상표 */
+            --primary-color: #FFB7B2; /* 파스텔 핑크/레드 (메인 포인트) */
+            --secondary-color: #A1C4FD; /* 파스텔 블루 (배경 무늬용) */
+            --accent-color: #FFDAC1; /* 파스텔 살구색 */
+            --bg-color: #FDFBFB; /* 아주 밝은 배경 */
+            --text-color: #4A4A4A; /* 먹색(너무 진하지 않은 검정) */
+            --card-bg: #FFFFFF;
+            
+            --btn-green: #A8E6CF; /* 파스텔 그린 (정답) */
+            --btn-green-hover: #8FDFBE;
+            --btn-yellow: #FFF1AA; /* 파스텔 옐로우 (힌트) */
+            --btn-yellow-hover: #FFE681;
+            --btn-red: #FFABAB; /* 파스텔 레드 (오답) */
+            
+            /* 그림자 및 모서리 둥글기 (크고 둥글게) */
+            --shadow-sm: 0 4px 6px rgba(0,0,0,0.05);
+            --shadow-md: 0 8px 15px rgba(0,0,0,0.1);
+            --shadow-lg: 0 15px 25px rgba(0,0,0,0.15);
+            --radius-lg: 32px;
+            --radius-md: 24px;
+            --radius-sm: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Fredoka', 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            /* 아이들이 좋아할 만한 귀엽고 은은한 도트 배경 패턴 */
+            background-image: radial-gradient(var(--secondary-color) 3px, transparent 3px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            background-attachment: fixed;
+        }
+
+        .app-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 싱글 페이지 애플리케이션 화면 전환 뷰 */
+        .view {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* [Home View] 메인 페이지 디자인 */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+        header h1 {
+            font-size: 3.5rem; /* 글씨 큼직하게 */
+            color: #FF9A9E; /* 진한 파스텔 핑크 */
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: 1.8rem;
+            color: #777;
+        }
+
+        .game-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        /* 게임 선택 카드 (크고 둥글게) */
+        .game-card {
+            background: var(--card-bg);
+            border: 4px solid var(--accent-color);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 320px;
+            text-decoration: none;
+        }
+
+        .game-card:hover {  /* 인터랙션 (호버 애니메이션) */
+            transform: translateY(-15px) scale(1.05);
+            box-shadow: var(--shadow-lg);
+            border-color: #FF9A9E;
+        }
+
+        .card-icon-wrap {
+            width: 100%;
+            height: 180px;
+            background: #FFF9F9;
+            border-radius: var(--radius-md);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 100px; /* 이모지 아이콘 적용 */
+        }
+
+        .game-card h2 {
+            font-size: 2.2rem;
+            color: #FF9A9E;
+        }
+
+        /* [Game Views Shared] 게임 화면 공통 적용 */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px 25px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-back {
+            background: #F0F4F8;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 10px 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn-back:hover {
+            transform: translateX(-5px);
+            background: #E2E8F0;
+        }
+
+        .score-board {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #FF9A9E;
+            background: #FFF0F0;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+        }
+
+        .game-content {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .question-text {
+            font-size: 2.5rem;
+            margin-bottom: 35px;
+            text-align: center;
+            color: #34495E;
+        }
+
+        /* 게임 본문 2단 배치 (가로 스크롤 방지 및 너비 활용) */
+        .game-main-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start; /* 힌트 팝업 시 왼쪽 버튼이 아래로 밀리는 현상 방지 */
+            width: 100%;
+            gap: 40px;
+            min-height: 320px; /* 힌트 영역만큼 미리 공간 확보 */
+        }
+
+        .game-left-col, .game-right-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        /* 객관식 보기 격자 형태 */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 30px;
+        }
+
+        /* 4지선다 버튼 */
+        .btn-option {
+            background: #F8FAFC;
+            border: 4px solid #E2E8F0;
+            border-radius: var(--radius-md);
+            padding: 25px 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: inherit;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            white-space: nowrap; /* 글자 줄바꿈 방지 */
+            word-break: keep-all; /* 단어 끊김 방지 */
+            box-shadow: 0 4px 0 #E2E8F0; /* 누르는 입체감 표현 */
+        }
+
+        .btn-option:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #E2E8F0;
+        }
+
+        .btn-option:hover {
+            background: #F1F5F9;
+            transform: translateY(-2px);
+            border-color: #CBD5E1;
+        }
+        /* 정답 시 효과 */
+        .btn-option.correct {
+            background: var(--btn-green);
+            border-color: #8FDFBE;
+            color: #2D3748;
+            box-shadow: 0 4px 0 #8FDFBE;
+            animation: bounceCorrect 0.6s;
+        }
+        /* 오답 시 효과 */
+        .btn-option.wrong {
+            background: var(--btn-red);
+            border-color: #FFA0A0;
+            color: #2D3748;
+            box-shadow: 0 4px 0 #FFA0A0;
+            animation: shakeWrong 0.5s;
+            opacity: 0.8;
+        }
+
+        @keyframes bounceCorrect {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 
+            40% {transform: translateY(-20px);} 
+            60% {transform: translateY(-10px);} 
+        }
+
+        @keyframes shakeWrong {
+            0% {transform: translateX(0);}
+            25% {transform: translateX(-15px);}
+            50% {transform: translateX(15px);}
+            75% {transform: translateX(-15px);}
+            100% {transform: translateX(0);}
+        }
+
+        /* 기능 버튼들 (힌트, 다음 문제) */
+        .action-buttons {
+            margin-top: 35px;
+            display: flex;
+            gap: 20px;
+        }
+        .btn-action {
+            border: none;
+            border-radius: var(--radius-lg);
+            padding: 20px 40px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+            transition: all 0.1s;
+            color: #333;
+        }
+        .btn-action:active {
+            transform: translateY(6px);
+            box-shadow: none;
+        }
+        .btn-yellow {
+            background: var(--btn-yellow);
+        }
+        .btn-green {
+            background: var(--btn-green);
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* 텍스트 피드백 ("정답이에요!", "다시 해볼까?" 등) */
+        .feedback-text {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 25px;
+            min-height: 45px;
+            text-align: center;
+        }
+        .feedback-text.success { color: #27AE60; }
+        .feedback-text.error { color: #E74C3C; }
+
+        /* [Game 1] 국기 맞추기 게임 디자인 요소 */
+        .flag-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .flag-container {
+            width: 360px;
+            height: 240px;
+            border: 6px solid #CBD5E1;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            background: #EEE;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .flag-container .fi {
+            font-size: 360px; /* 국기를 아주 크게 */
+            line-height: 1;
+        }
+
+        .hint-section {
+            background: #FFFDF0;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 3px dashed #F1C40F;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            animation: fadeIn 0.5s ease;
+        }
+        #hint-image {
+            max-width: 100%;
+            max-height: 200px; /* 이미지가 너무 커서 레이아웃을 해치는 것 방지 */
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+            margin-bottom: 15px;
+        }
+        .hint-section p {
+            font-size: 1.6rem;
+            color: #555;
+            font-weight: 700;
+        }
+
+        /* [Game 2] 아날로그 시계 게임 디자인 요소 */
+        .clock-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .clock-container {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .analog-clock {
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            border: 28px solid var(--secondary-color); /* 파스텔 블루 테두리 */
+            background: white;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.05), 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .center-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: #FF9A9E; /* 파스텔 레드 코어 */
+            border-radius: 50%;
+            z-index: 10;
+        }
+        
+        /* 시계 바늘 공통 속성 */
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 10px;
+        }
+        /* 시침 */
+        .hour-hand {
+            width: 24px;
+            height: 150px;
+            background: #FF9A9E; /* 시침은 짧고 굵은 파스텔 레드 */
+            margin-left: -12px;
+            z-index: 8;
+            border-radius: 20px;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        /* 분침 */
+        .min-hand {
+            width: 16px;
+            height: 230px;
+            background: #A1C4FD; /* 분침은 길고 파스텔 블루 */
+            margin-left: -8px;
+            z-index: 7;
+            border-radius: 20px;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        /* 시계 숫자판 설계 (가독성을 위해 연하게 배치) */
+        .number {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            display: none; /* 기본 숨김 (문제 모드) */
+            z-index: 15; /* 바늘(7, 8) 위로 올라오도록 설정 */
+        }
+        
+        .num-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 15px; /* 테두리와 여백 */
+        }
+
+        .hour-text {
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: #FF9A9E; /* 핑크색으로 시침과 색상 통일 */
+            line-height: 1;
+        }
+
+        .minute-text {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #A1C4FD; /* 파란색 분 단위 (분침과 통일) */
+            margin-top: -4px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 12px;
+            padding: 0 10px;
+        }
+
+        .analog-clock.show-numbers .number {
+            display: block; /* 힌트보기 시 노출 */
+        }
+        
+        /* 숫자들을 둥글게 원형으로 배치하기 위한 CSS Rotate */
+        .number-1 { transform: rotate(30deg); }   .number-1 .num-wrapper { transform: rotate(-30deg); }
+        .number-2 { transform: rotate(60deg); }   .number-2 .num-wrapper { transform: rotate(-60deg); }
+        .number-3 { transform: rotate(90deg); }   .number-3 .num-wrapper { transform: rotate(-90deg); }
+        .number-4 { transform: rotate(120deg); }  .number-4 .num-wrapper { transform: rotate(-120deg); }
+        .number-5 { transform: rotate(150deg); }  .number-5 .num-wrapper { transform: rotate(-150deg); }
+        .number-6 { transform: rotate(180deg); }  .number-6 .num-wrapper { transform: rotate(-180deg); }
+        .number-7 { transform: rotate(210deg); }  .number-7 .num-wrapper { transform: rotate(-210deg); }
+        .number-8 { transform: rotate(240deg); }  .number-8 .num-wrapper { transform: rotate(-240deg); }
+        .number-9 { transform: rotate(270deg); }  .number-9 .num-wrapper { transform: rotate(-270deg); }
+        .number-10 { transform: rotate(300deg); } .number-10 .num-wrapper { transform: rotate(-300deg); }
+        .number-11 { transform: rotate(330deg); } .number-11 .num-wrapper { transform: rotate(-330deg); }
+        .number-12 { transform: rotate(360deg); } .number-12 .num-wrapper { transform: rotate(-360deg); }
+
+        /* 반응형 (세로 화면 대응) */
+        @media screen and (max-width: 768px) {
+            .game-main-row {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+        @media screen and (max-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            .analog-clock {
+                width: 240px; height: 240px;
+            }
+            .hour-hand { height: 60px; }
+            .min-hand { height: 90px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container">
+        
+        <!-- ==============================
+             [메인 메뉴 화면] View 컴포넌트 
+             ============================== -->
+        <section id="home-view" class="view active">
+            <header>
+                <h1>✨ 미니게임 놀이터 ✨</h1>
+                <p>재미있는 게임을 골라보세요!</p>
+            </header>
+            <div class="game-list">
+                <button class="game-card" onclick="app.startGame('flag')">
+                    <!-- 별도 이미지 파일 대신 이모지 활용으로 외부 의존도 제거 -->
+                    <div class="card-icon-wrap">🚩</div>
+                    <h2>국기 맞추기</h2>
+                </button>
+                <button class="game-card" onclick="app.startGame('animal')">
+                    <div class="card-icon-wrap">🐶</div>
+                    <h2>동물 이름 맞추기</h2>
+                </button>
+                <button class="game-card" onclick="app.startGame('clock')">
+                    <div class="card-icon-wrap">⏰</div>
+                    <h2>시계 읽기</h2>
+                </button>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [국기 게임 화면] View 컴포넌트 
+             ============================== -->
+        <section id="flag-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🔙 홈으로</button>
+                <div class="score-board">점수: <span id="flag-score">0</span> / <span id="flag-total">0</span></div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">이 국기는 어느 나라일까요?</h2>
+                
+                <!-- 국기 중앙 크게 표시 -->
+                <div class="flag-wrapper">
+                    <div class="flag-container">
+                        <span id="flag-display" class="fi"></span>
+                    </div>
+                </div>
+                
+                <div class="game-main-row">
+                    <!-- 좌측: 문제 (정답 박스 및 액션 버튼) -->
+                    <div class="game-left-col">
+                        <div class="options-grid" id="flag-options">
+                            <!-- 동기로 버튼들이 렌더링 됩니다 -->
+                        </div>
+                        
+                        <!-- 힌트버튼이 밀리는 현상을 원천 차단하기 위해 좌측 칼럼 안으로 이동 -->
+                        <div class="action-buttons">
+                            <button id="btn-hint" class="btn-action btn-yellow" onclick="flagGame.toggleHint()">💡 힌트 보기</button>
+                            <button id="btn-next-flag" class="btn-action btn-green hidden" onclick="flagGame.nextQuestion()">다음 문제 ➡️</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 우측: 힌트 화면 -->
+                    <div class="game-right-col" id="flag-hint-wrapper">
+                        <!-- 처음에 영역만 유지하여 덜덜거림 방지 -->
+                        <div id="hint-section" class="hint-section hidden">
+                            <img id="hint-image" src="" alt="힌트 이미지">
+                            <p id="hint-text"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="flag-feedback" class="feedback-text"></div>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [동물 맞추기 게임 화면] View 컴포넌트 
+             ============================== -->
+        <section id="animal-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🔙 홈으로</button>
+                <div class="score-board">점수: <span id="animal-score">0</span> / <span id="animal-total">0</span></div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">이 동물의 영어 이름은 무엇일까요?</h2>
+                
+                <!-- 동물 사진 중앙 표시 -->
+                <div class="flag-wrapper">
+                    <!-- flag 스타일을 재활용하지만 크기나 여백 등을 조금 다르게 할 수도 있음 여기서는 그대로 사용 -->
+                    <div class="flag-container" style="background:#fff; border-color:#FFDAC1; display:flex; justify-content:center; align-items:center;">
+                        <div id="animal-emoji" style="font-size: 10rem; line-height: 1; user-select: none;">🐶</div>
+                    </div>
+                </div>
+                
+                <div class="game-main-row">
+                    <!-- 좌측: 보기 옵션 및 버튼 -->
+                    <div class="game-left-col">
+                        <div class="options-grid" id="animal-options">
+                            <!-- 동기로 버튼들이 렌더링 됩니다 -->
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button id="btn-animal-hint" class="btn-action btn-yellow" onclick="animalGame.toggleHint()">💡 힌트 보기 (1단계)</button>
+                            <button id="btn-next-animal" class="btn-action btn-green hidden" onclick="animalGame.nextQuestion()">다음 문제 ➡️</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 우측: 힌트 화면 -->
+                    <div class="game-right-col" id="animal-hint-wrapper">
+                        <div id="animal-hint-section" class="hint-section hidden" style="border-color:#FF9A9E; background:#FFF5F5;">
+                            <h3 style="color: #FF9A9E; font-size: 2.2rem; margin-bottom: 15px;">✨ 스펠링 힌트</h3>
+                            <p id="animal-hint-text" style="font-size: 1.8rem;">
+                                <!-- 자바스크립트에서 힌트 텍스트 렌더링 -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="animal-feedback" class="feedback-text"></div>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [시계 게임 화면] View 컴포넌트 
+             ============================== -->
+        <section id="clock-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🔙 홈으로</button>
+                <div class="score-board">점수: <span id="clock-score">0</span> / <span id="clock-total">0</span></div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">지금은 몇 시일까요?</h2>
+                
+                <div class="game-main-row" style="align-items: center;">
+                    <!-- 좌측: 커다란 시계 -->
+                    <div class="clock-wrapper" style="flex: 1.2; justify-content: center; margin-bottom: 0;">
+                        <div class="clock-container">
+                            <div class="analog-clock">
+                                <!-- 숫자판 (1~12 시간, 5~60 분 표시) -->
+                                <div class="number number-1"><div class="num-wrapper"><div class="hour-text">1</div><div class="minute-text">5</div></div></div>
+                                <div class="number number-2"><div class="num-wrapper"><div class="hour-text">2</div><div class="minute-text">10</div></div></div>
+                                <div class="number number-3"><div class="num-wrapper"><div class="hour-text">3</div><div class="minute-text">15</div></div></div>
+                                <div class="number number-4"><div class="num-wrapper"><div class="hour-text">4</div><div class="minute-text">20</div></div></div>
+                                <div class="number number-5"><div class="num-wrapper"><div class="hour-text">5</div><div class="minute-text">25</div></div></div>
+                                <div class="number number-6"><div class="num-wrapper"><div class="hour-text">6</div><div class="minute-text">30</div></div></div>
+                                <div class="number number-7"><div class="num-wrapper"><div class="hour-text">7</div><div class="minute-text">35</div></div></div>
+                                <div class="number number-8"><div class="num-wrapper"><div class="hour-text">8</div><div class="minute-text">40</div></div></div>
+                                <div class="number number-9"><div class="num-wrapper"><div class="hour-text">9</div><div class="minute-text">45</div></div></div>
+                                <div class="number number-10"><div class="num-wrapper"><div class="hour-text">10</div><div class="minute-text">50</div></div></div>
+                                <div class="number number-11"><div class="num-wrapper"><div class="hour-text">11</div><div class="minute-text">55</div></div></div>
+                                <div class="number number-12"><div class="num-wrapper"><div class="hour-text">12</div><div class="minute-text">60</div></div></div>
+                                
+                                <!-- 시계 바늘 -->
+                                <div class="hand hour-hand" id="hour-hand"></div>
+                                <div class="hand min-hand" id="min-hand"></div>
+                                <div class="center-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 우측: 옵션 및 액션 버튼들 -->
+                    <div class="game-left-col" style="flex: 0.8; justify-content: center; align-items: stretch; min-height: auto;">
+                        <div class="options-grid" id="clock-options" style="display: flex; flex-direction: column; gap: 15px;">
+                            <!-- 동기로 버튼들이 세로로 배열됩니다 -->
+                        </div>
+                        
+                        <div class="action-buttons" style="justify-content: center; flex-wrap: wrap; margin-top: 25px;">
+                            <button id="btn-clock-hint" class="btn-action btn-yellow" onclick="clockGame.toggleHint()">💡 힌트 보기</button>
+                            <button id="btn-next-clock" class="btn-action btn-green hidden" onclick="clockGame.nextQuestion()">다음 문제 ➡️</button>
+                        </div>
+                        
+                        <div id="clock-feedback" class="feedback-text" style="min-height: 80px;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ==============================
+         [로직 스크립트 묶음]
+         ============================== -->
+    <script>
+        /**
+         * [데이터 모델 (Data Model)]
+         * 나라 데이터베이스 및 확률 로직 구성 구간
+         */
+        
+        // 국기 출제 문제 은행 (유명 국가 70% 비중, 기타 30% 출제를 위한 weight 적용)
+        const countriesData = [
+            // --- 기존 인지도 높은 국가 ---
+            { code: 'kr', name: '대한민국', weight: 50, hintImage: './images/hint_kr.png', hintText: '우리나라, 한국! 김치와 태권도로 엄청 유명해요!' },
+            { code: 'us', name: '미국', weight: 40, hintImage: './images/hint_us.png', hintText: '거대한 자유의 여신상이 횃불을 들고 서 있는 아주 큰 나라에요!' },
+            { code: 'jp', name: '일본', weight: 35, hintImage: './images/hint_jp.png', hintText: '초밥이 제일 유명하고, 커다란 화산인 후지산이 있는 이웃 나라에요.' },
+            { code: 'cn', name: '중국', weight: 35, hintImage: './images/hint_cn.png', hintText: '귀여운 판다가 살고, 우주에서도 보인다는 아주 긴 만리장성이 있어요!' },
+            { code: 'fr', name: '프랑스', weight: 35, hintImage: './images/hint_fr.png', hintText: '높이 솟은 에펠탑이 있고, 맛있는 바게트 빵의 고향이에요!' },
+            { code: 'gb', name: '영국', weight: 30, hintImage: './images/hint_gb.png', hintText: '커다란 시계탑인 빅벤과 예쁜 빨간색 이층버스가 거리를 달려요.' },
+            { code: 'ca', name: '캐나다', weight: 20, hintImage: './images/hint_ca.png', hintText: '빨간 단풍잎 모양이 국기에 쏙 들어있고 달콤한 메이플 시럽이 유명해요!' },
+            { code: 'au', name: '호주', weight: 20, hintImage: './images/hint_au.png', hintText: '주머니가 있는 캥거루와 잠자는 코알라가 살고 있는 따뜻한 나라에요!' },
+            { code: 'br', name: '브라질', weight: 15, hintImage: './images/hint_br.png', hintText: '거대한 아마존 숲이 있고 세계에서 축구를 가장 잘하는 아름다운 곳이에요!' },
+            { code: 'it', name: '이탈리아', weight: 15, hintImage: './images/hint_it.png', hintText: '우리가 좋아하는 피자와 파스타가 처음 만들어진 나라에요. 콜로세움이라는 둥근 건물이 있어요!' },
+            { code: 'es', name: '스페인', weight: 15, hintImage: './images/hint_es.png', hintText: '조각 천처럼 예쁜 건물들과 열정적인 투우 경기가 유명한 나라에요!' },
+            { code: 'de', name: '독일', weight: 15, hintImage: './images/hint_de.png', hintText: '동화 속에 나오는 멋진 성이 아주 많고 튼튼한 자동차를 잘 만드는 나라에요!' },
+            { code: 'in', name: '인도', weight: 10, hintImage: './images/hint_in.png', hintText: '카레가 아주 유명하고 타지마할이라는 하얗고 예쁜 궁전이 있어요.' },
+            { code: 'ru', name: '러시아', weight: 10, hintImage: './images/hint_ru.png', hintText: '세계에서 가장 땅이 넓고, 눈꽃처럼 추운 나라에요.' },
+            { code: 'za', name: '남아프리카 공화국', weight: 5, hintImage: './images/hint_za.png', hintText: '아프리카 대륙의 제일 아래쪽에 있고 야생동물들이 자유롭게 뛰어놀아요.' },
+            { code: 'mx', name: '멕시코', weight: 5, hintImage: './images/hint_mx.png', hintText: '옥수수로 만든 과자 타코를 즐겨먹는 선인장이 많은 나라에요.' },
+            { code: 'vn', name: '베트남', weight: 8, hintImage: './images/hint_vn.png', hintText: '뜨끈한 쌀국수가 맛있고 뾰족하고 예쁜 모자를 많이 써요.' },
+            { code: 'th', name: '태국', weight: 8, hintImage: './images/hint_th.png', hintText: '코끼리가 많고 황금빛으로 반짝이는 사원이 예쁜 나라에요.' },
+            // --- 신규 확장 리스트 (총 100개) ---
+            { code: 'ar', name: '아르헨티나', weight: 10, hintImage: './images/hint_ar.png', hintText: '축구를 아주 잘하고 탱고라는 멋진 춤을 추는 나라에요.' },
+            { code: 'eg', name: '이집트', weight: 10, hintImage: './images/hint_eg.png', hintText: '세모난 거대한 피라미드와 사막을 걷는 낙타가 많아요.' },
+            { code: 'tr', name: '튀르키예', weight: 10, hintImage: './images/hint_tr.png', hintText: '수많은 열기구가 하늘을 날고 쫄깃한 아이스크림이 유명해요.' },
+            { code: 'gr', name: '그리스', weight: 10, hintImage: './images/hint_gr.png', hintText: '하얀 집들과 파란 지붕이 바다와 어우러진 신화 속 나라에요.' },
+            { code: 'ch', name: '스위스', weight: 15, hintImage: './images/hint_ch.png', hintText: '구멍 뚫린 치즈와 만년설이 덮인 높은 산으로 유명해요.' },
+            { code: 'se', name: '스웨덴', weight: 5, hintImage: './images/hint_se.png', hintText: '안전한 자동차와 조립해서 쓰는 가구를 만드는 북쪽 나라에요.' },
+            { code: 'nl', name: '네덜란드', weight: 10, hintImage: './images/hint_nl.png', hintText: '예쁜 튤립 꽃밭과 빙글빙글 돌아가는 풍차가 있어요.' },
+            { code: 'sg', name: '싱가포르', weight: 5, hintImage: './images/hint_sg.png', hintText: '사자 얼굴에 물고기 몸을 한 신기한 머라이언 동상이 있어요.' },
+            { code: 'id', name: '인도네시아', weight: 5, hintImage: './images/hint_id.png', hintText: '수많은 섬으로 이루어진 더운 나라이고 코모도 왕도마뱀이 살아요.' },
+            { code: 'ph', name: '필리핀', weight: 8, hintImage: './images/hint_ph.png', hintText: '달콤한 바나나와 망고, 예쁜 바다가 있는 열대 나라에요.' },
+            { code: 'my', name: '말레이시아', weight: 5, hintImage: './images/hint_my.png', hintText: '아주 높은 쌍둥이 타워와 밀림에 오랑우탄이 살아요.' },
+            { code: 'ae', name: '아랍에미리트', weight: 5, hintImage: './images/hint_ae.png', hintText: '구름 위로 솟아오른 세계에서 가장 높은 빌딩이 있어요.' },
+            { code: 'sa', name: '사우디아라비아', weight: 5, hintImage: './images/hint_sa.png', hintText: '뜨거운 사막 밑에 새까만 석유가 아주 많이 묻혀있어요.' },
+            { code: 'nz', name: '뉴질랜드', weight: 8, hintImage: './images/hint_nz.png', hintText: '복슬복슬한 양과 날지 못하는 귀여운 키위새가 살아요.' },
+            { code: 'pt', name: '포르투갈', weight: 5, hintImage: './images/hint_pt.png', hintText: '유럽 끝에 있는 나라이고 귀여운 노란색 트램이 언덕을 오르내려요.' },
+            { code: 'pl', name: '폴란드', weight: 3, hintImage: './images/hint_pl.png', hintText: '만두를 많이 먹고, 쇼팽이라는 유명한 피아니스트의 고향이에요.' },
+            { code: 'ie', name: '아일랜드', weight: 3, hintImage: './images/hint_ie.png', hintText: '초록색 옷을 입은 요정과 네잎클로버가 행운을 가져다줘요.' },
+            { code: 'no', name: '노르웨이', weight: 3, hintImage: './images/hint_no.png', hintText: '기다란 배를 탄 바이킹의 나라이고 맛있는 연어가 많이 잡혀요.' },
+            { code: 'dk', name: '덴마크', weight: 3, hintImage: './images/hint_dk.png', hintText: '우리가 좋아하는 네모난 레고 블록이 처음 만들어진 곳이에요!' },
+            { code: 'fi', name: '핀란드', weight: 3, hintImage: './images/hint_fi.png', hintText: '빨간 옷을 입은 산타클로스 할아버지의 진짜 고향이랍니다.' },
+            { code: 'cz', name: '체코', weight: 3, hintImage: './images/hint_cz.png', hintText: '주황색 지붕들의 도시와 신기하게 움직이는 천문 시계가 있어요.' },
+            { code: 'at', name: '오스트리아', weight: 3, hintImage: './images/hint_at.png', hintText: '모차르트 같은 훌륭한 음악가들이 태어난 왈츠의 나라에요.' },
+            { code: 'be', name: '벨기에', weight: 3, hintImage: './images/hint_be.png', hintText: '달콤한 와플과 네모난 초콜릿, 스머프가 아주 유명해요!' },
+            { code: 'hu', name: '헝가리', weight: 3, hintImage: './images/hint_hu.png', hintText: '따뜻한 온천이 많고 강을 따라 보이는 야경이 최고로 예뻐요.' },
+            { code: 'ro', name: '루마니아', weight: 3, hintImage: './images/hint_ro.png', hintText: '뾰족한 송곳니를 가진 드라큘라 백작 전설이 내려오는 곳이에요.' },
+            { code: 'ua', name: '우크라이나', weight: 5, hintImage: './images/hint_ua.png', hintText: '해바라기가 아주 많이 피는 노랗고 파란 국기를 가졌어요.' },
+            { code: 'cl', name: '칠레', weight: 3, hintImage: './images/hint_cl.png', hintText: '세계에서 제일 길쭉한 모양의 나라고, 모아이 석상이 있어요.' },
+            { code: 'pe', name: '페루', weight: 3, hintImage: './images/hint_pe.png', hintText: '침을 뱉는 라마가 살고, 산 꼭대기에 잉카 문명의 도시가 있어요.' },
+            { code: 'co', name: '콜롬비아', weight: 3, hintImage: './images/hint_co.png', hintText: '따뜻하고 커피콩이 아주 맛있기로 유명한 나라에요.' },
+            { code: 'cu', name: '쿠바', weight: 3, hintImage: './images/hint_cu.png', hintText: '알록달록 예쁜 올드카 자동차들이 거리를 굴러다니는 섬나라에요.' },
+            { code: 'jm', name: '자메이카', weight: 2, hintImage: './images/hint_jm.png', hintText: '세계에서 달리기 기록이 제일 빠른 우사인 볼트의 고향이에요.' },
+            { code: 'cr', name: '코스타리카', weight: 1, hintImage: './images/hint_cr.png', hintText: '부리가 아주 큰 투칸 새와 개구리들이 사는 멋진 자연의 나라에요.' },
+            { code: 'pa', name: '파나마', weight: 1, hintImage: './images/hint_pa.png', hintText: '거대한 바다와 바다를 잇는 좁은 물길, 파나마 운하가 있어요.' },
+            { code: 'ng', name: '나이지리아', weight: 2, hintImage: './images/hint_ng.png', hintText: '아프리카에서 사람들이 가장 많이 살고 있는 큰 나라에요.' },
+            { code: 'ke', name: '케냐', weight: 2, hintImage: './images/hint_ke.png', hintText: '빠른 치타와 얼룩말들이 끝없이 뛰어다니는 사바나 초원이 있어요.' },
+            { code: 'ma', name: '모로코', weight: 2, hintImage: './images/hint_ma.png', hintText: '알리바바와 40인의 도둑에 나올 것 같은 예쁜 동화 속 시장이 있어요.' },
+            { code: 'dz', name: '알제리', weight: 1, hintImage: './images/hint_dz.png', hintText: '아프리카에서 제일 큰 영토를 가졌고 귀가 큰 사막여우가 살아요.' },
+            { code: 'fj', name: '피지', weight: 1, hintImage: './images/hint_fj.png', hintText: '바다가 맑아서 산호초가 다 보이는 작고 예쁜 섬들의 모임이에요.' },
+            { code: 'mn', name: '몽골', weight: 2, hintImage: './images/hint_mn.png', hintText: '드넓은 초원 위에서 말을 타고 하얀 천막 집(게르)에서 살아요.' },
+            { code: 'np', name: '네팔', weight: 2, hintImage: './images/hint_np.png', hintText: '지구에서 제일 높은 에베레스트 산이 있는 나라이에요.' },
+            { code: 'pk', name: '파키스탄', weight: 2, hintImage: './images/hint_pk.png', hintText: '화려하게 꾸민 버스와 툭툭(삼륜차)이 길거리를 달려요.' },
+            { code: 'bd', name: '방글라데시', weight: 1, hintImage: './images/hint_bd.png', hintText: '비가 아주 많이 오고 멋진 줄무늬의 벵골 호랑이가 살아요.' },
+            { code: 'lk', name: '스리랑카', weight: 1, hintImage: './images/hint_lk.png', hintText: '따뜻한 인도양의 눈물이라 불리며 맛있는 홍차가 자라나요.' },
+            { code: 'kh', name: '캄보디아', weight: 2, hintImage: './images/hint_kh.png', hintText: '밀림 속에 코끼리 모양을 조각한 거대한 앙코르와트 사원이 있어요.' },
+            { code: 'uz', name: '우즈베키스탄', weight: 2, hintImage: './images/hint_uz.png', hintText: '파란 타일로 장식된 옛날 건물들이 반짝이는 실크로드의 중심지에요.' },
+            { code: 'kz', name: '카자흐스탄', weight: 2, hintImage: './images/hint_kz.png', hintText: '세계에서 가장 큰 내륙국이며 우리가 아는 사과의 진짜 고향이에요.' },
+            { code: 'ir', name: '이란', weight: 2, hintImage: './images/hint_ir.png', hintText: '알라딘에 나오는 날아다니는 마법 양탄자를 아주 잘 만드는 곳이에요.' },
+            { code: 'iq', name: '이라크', weight: 1, hintImage: './images/hint_iq.png', hintText: '달고 맛있는 대추야자 열매가 열리고 메소포타미아 문명이 있었어요.' },
+            { code: 'jo', name: '요르단', weight: 1, hintImage: './images/hint_jo.png', hintText: '붉은 바위산을 깎아서 만든 멋진 고대 도시 페트라가 숨겨져 있어요.' },
+            { code: 'is', name: '아이슬란드', weight: 2, hintImage: './images/hint_is.png', hintText: '밤하늘 춤추는 오로라와 뜨거운 화산, 귀여운 퍼핀 새가 있어요.' },
+            { code: 'tw', name: '대만', weight: 5, hintImage: './images/hint_tw.png', hintText: '펄이 가득 든 달콤한 밀크티 버블티가 처음 만들어진 나라에요!' },
+            { code: 'hk', name: '홍콩', weight: 4, hintImage: './images/hint_hk.png', hintText: '밤에 빨갛고 불빛이 예쁜 간판이 많고 딤섬이라는 만두를 먹어요.' },
+            { code: 'kp', name: '북한', weight: 5, hintImage: './images/hint_kp.png', hintText: '휴전선을 넘어 바로 위에 붙어있는 나라이고 평양냉면이 유명해요.' },
+            { code: 've', name: '베네수엘라', weight: 2, hintImage: './images/hint_ve.png', hintText: '세계에서 제일 놓은 곳에서 물이 쏟아지는 엔젤 폭포가 있어요.' },
+            { code: 'gh', name: '가나', weight: 2, hintImage: './images/hint_gh.png', hintText: '초콜릿을 만드는 카카오 열매가 아주아주 많이 열리는 나라에요.' },
+            { code: 'ci', name: '코트디부아르', weight: 1, hintImage: './images/hint_ci.png', hintText: '코끼리의 하얀 어금니상아라는 뜻을 가진 아프리카의 나라에요.' },
+            { code: 'tz', name: '탄자니아', weight: 2, hintImage: './images/hint_tz.png', hintText: '아프리카에서 제일 높은 거대한 킬리만자로 산이 솟아있어요.' },
+            { code: 'ug', name: '우간다', weight: 1, hintImage: './images/hint_ug.png', hintText: '거대하고 다정하며 덩치가 큰 마운틴 고릴라가 정글에 살아요.' },
+            { code: 'ht', name: '아이티', weight: 1, hintImage: './images/hint_ht.png', hintText: '카리브해 바다에 있는 아주 아름다운 노란 햇빛의 섬나라에요.' },
+            { code: 'qa', name: '카타르', weight: 3, hintImage: './images/hint_qa.png', hintText: '얼마 전 월드컵 대회가 열렸던 사막위의 부자 나라에요.' },
+            { code: 'kw', name: '쿠вей', weight: 1, hintImage: './images/hint_kw.png', hintText: '거대한 버섯모양의 예쁜 물탱크 세 개가 우뚝 서있는 곳이에요.' },
+            { code: 'bh', name: '바레인', weight: 1, hintImage: './images/hint_bh.png', hintText: '사막 한가운데 신기하게 혼자 자라난 생명의 나무가 있어요.' },
+            { code: 'om', name: '오만', weight: 1, hintImage: './images/hint_om.png', hintText: '향기로운 유향 나무가 있고 아라비안 나이트의 무대 중 하나에요.' },
+            { code: 'ye', name: '예멘', weight: 1, hintImage: './images/hint_ye.png', hintText: '과자로 만든 집처럼 생긴 흙집들이 모여있는 신기한 나라에요.' },
+            { code: 'af', name: '아프가니스탄', weight: 1, hintImage: './images/hint_af.png', hintText: '하늘 높이 연날리기를 좋아하고 아주 높고 뾰족한 산들이 많아요.' },
+            { code: 'ge', name: '조지아', weight: 1, hintImage: './images/hint_ge.png', hintText: '배 모양 빵 가운데에 계란 노른자가 톡 얹어진 하차푸리를 먹어요.' },
+            { code: 'am', name: '아르메니아', weight: 1, hintImage: './images/hint_am.png', hintText: '노아의 방주가 멈췄다는 전설 깊은 커다란 산맥 곁의 나라에요.' },
+            { code: 'az', name: '아제르바이잔', weight: 1, hintImage: './images/hint_az.png', hintText: '땅에서 천연가스가 나와서 꺼지지 않는 불꽃 사원이 붉게 타올라요.' },
+            { code: 'uy', name: '우루과이', weight: 2, hintImage: './images/hint_uy.png', hintText: '둥근 박에 빨대를 꽂아서 먹는 씁쓸한 마테차를 아주 즐겨마셔요.' },
+            { code: 'py', name: '파라과이', weight: 1, hintImage: './images/hint_py.png', hintText: '아메리카 대륙 한가운데 국기가 앞뒤 모습이 다른 신기한 나라에요.' },
+            { code: 'bo', name: '볼리비아', weight: 2, hintImage: './images/hint_bo.png', hintText: '끝이 보이지 않는 커다란 하얀 소금사막 우유니가 예쁜 곳이에요.' },
+            { code: 'ec', name: '에콰도르', weight: 1, hintImage: './images/hint_ec.png', hintText: '적도가 지나가고, 갈라파고스의 커다란 코끼리 거북이가 살아요.' },
+            { code: 'hn', name: '온두라스', weight: 1, hintImage: './images/hint_hn.png', hintText: '마야 문명의 유적이 있고 아주 크고 화려한 깃털의 앵무새가 많아요.' },
+            { code: 'sv', name: '엘살바도르', weight: 1, hintImage: './images/hint_sv.png', hintText: '치즈와 고기가 들어간 푸푸사라는 맛있는 길거리 호떡을 먹어요.' },
+            { code: 'ni', name: '니카라과', weight: 1, hintImage: './images/hint_ni.png', hintText: '중앙아메리카에서 가장 큰 호수에 무서운 상어가 사는 나라에요.' },
+            { code: 'pw', name: '팔라우', weight: 1, hintImage: './images/hint_pw.png', hintText: '가시에 찔리지 않는 젤리피시(해파리)들과 같이 수영해요.' },
+            { code: 'fm', name: '미크로네시아', weight: 1, hintImage: './images/hint_fm.png', hintText: '징검다리처럼 흩어진 산호섬과 물 위에 세워진 신기한 돌 유적이 있어요.' },
+            { code: 'mh', name: '마셜 제도', weight: 1, hintImage: './images/hint_mh.png', hintText: '나무 막대기로 파도를 그려 지도를 만든 섬이에요.' },
+            { code: 'vu', name: '바누아투', weight: 1, hintImage: './images/hint_vu.png', hintText: '발목에 덩굴을 묶어 뛰어내리는 서서 뛰는 번지점프의 원조 나라에요.' },
+            { code: 'to', name: '통가', weight: 1, hintImage: './images/hint_to.png', hintText: '거대한 혹등고래 떼가 헤엄치러 오는 아주 따뜻하고 멋진 왕국이에요.' },
+            { code: 'ws', name: '사모아', weight: 1, hintImage: './images/hint_ws.png', hintText: '얼굴을 제외한 몸에 화려한 무늬를 새기고 빙글빙글 불춤을 추어요.' },
+            { code: 'aq', name: '남극', weight: 1, hintImage: './images/hint_aq.png', hintText: '펭귄과 바다표범이 얼음 위를 뛰노는 지구 가장 아래쪽의 추운 곳이에요.' }
+        ];
+
+        // 뽑힌적이 없는 나라 중에서 가중치에 따라 1개를 랜덤 선택하는 함수
+        function getRandomCountry(excludeList = []) {
+            let pool = countriesData.filter(c => !excludeList.includes(c.code));
+            let totalWeight = pool.reduce((sum, c) => sum + c.weight, 0);
+            let rand = Math.random() * totalWeight;
+            
+            for (let i = 0; i < pool.length; i++) {
+                rand -= pool[i].weight;
+                if (rand <= 0) return pool[i];
+            }
+            return pool[pool.length - 1]; // 만약을 대비한 안전 폴백
+        }
+
+        // 보기 생성을 위해 여러개의 나라를 중복없이 뽑는 함수
+        function getMultipleRandomCountries(count) {
+            let result = [];
+            let exclude = [];
+            for(let i=0; i<count; i++) {
+                let c = getRandomCountry(exclude);
+                result.push(c);
+                exclude.push(c.code);
+            }
+            return result;
+        }
+
+        /**
+         * [동물 데이터 모델]
+         */
+        const animalsData = [
+            { code: 'dog', name: 'Dog', krName: '강아지', weight: 1, emoji: '🐶' },
+            { code: 'cat', name: 'Cat', krName: '고양이', weight: 1, emoji: '🐱' },
+            { code: 'bear', name: 'Bear', krName: '곰', weight: 1, emoji: '🐻' },
+            { code: 'tiger', name: 'Tiger', krName: '호랑이', weight: 1, emoji: '🐯' },
+            { code: 'lion', name: 'Lion', krName: '사자', weight: 1, emoji: '🦁' },
+            { code: 'elephant', name: 'Elephant', krName: '코끼리', weight: 2, emoji: '🐘' },
+            { code: 'giraffe', name: 'Giraffe', krName: '기린', weight: 1, emoji: '🦒' },
+            { code: 'monkey', name: 'Monkey', krName: '원숭이', weight: 1, emoji: '🐵' },
+            { code: 'rabbit', name: 'Rabbit', krName: '토끼', weight: 1, emoji: '🐰' },
+            { code: 'fox', name: 'Fox', krName: '여우', weight: 1, emoji: '🦊' },
+            { code: 'pig', name: 'Pig', krName: '돼지', weight: 1, emoji: '🐷' },
+            { code: 'cow', name: 'Cow', krName: '소', weight: 1, emoji: '🐮' },
+            { code: 'horse', name: 'Horse', krName: '말', weight: 1, emoji: '🐴' },
+            { code: 'zebra', name: 'Zebra', krName: '얼룩말', weight: 1, emoji: '🦓' },
+            { code: 'hippo', name: 'Hippo', krName: '하마', weight: 2, emoji: '🦛' },
+            { code: 'rhino', name: 'Rhino', krName: '코뿔소', weight: 2, emoji: '🦏' },
+            { code: 'kangaroo', name: 'Kangaroo', krName: '캥거루', weight: 2, emoji: '🦘' },
+            { code: 'penguin', name: 'Penguin', krName: '펭귄', weight: 1, emoji: '🐧' },
+            { code: 'dolphin', name: 'Dolphin', krName: '돌고래', weight: 2, emoji: '🐬' },
+            { code: 'eagle', name: 'Eagle', krName: '독수리', weight: 1, emoji: '🦅' }
+        ];
+
+        // 뽑힌적이 없는 동물 중에서 무작위로 선택하는 함수
+        function getRandomAnimal(excludeList = []) {
+            let pool = animalsData.filter(a => !excludeList.includes(a.code));
+            let totalWeight = pool.reduce((sum, a) => sum + a.weight, 0);
+            let rand = Math.random() * totalWeight;
+            
+            for (let i = 0; i < pool.length; i++) {
+                rand -= pool[i].weight;
+                if (rand <= 0) return pool[i];
+            }
+            return pool[pool.length - 1];
+        }
+
+        function getMultipleRandomAnimals(count) {
+            let result = [];
+            let exclude = [];
+            for(let i=0; i<count; i++) {
+                let a = getRandomAnimal(exclude);
+                result.push(a);
+                exclude.push(a.code);
+            }
+            return result;
+        }
+
+        /**
+         * [시간 데이터 모델]
+         * 정각과 30분 단위 출제 빈도를 60% 이상으로 유지
+         */
+        const clockDifficulties = [
+            // 난이도 1: 정각 (40%)
+            { type: 'hour', weight: 40, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 0, str: h + "시 정각", digital: h + ":00"}; } },
+            // 난이도 2: 30분 반 (30%) - 이로써 정각+30분이 70%의 비중을 차지함!
+            { type: 'half', weight: 30, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 30, str: h + "시 30분", digital: h + ":30"}; } },
+            // 난이도 3: 15분, 45분 단위 (15%)
+            { type: 'quarter', weight: 15, gen: () => { let h = Math.floor(Math.random()*12)+1; let m = Math.random() > 0.5 ? 15 : 45; return {h, m, str: `${h}시 ${m}분`, digital: `${h}:${m}`}; } },
+            // 난이도 4: 기타 10분 단위 (15%)
+            { type: 'ten', weight: 15, gen: () => { let h = Math.floor(Math.random()*12)+1; let arr = [10,20,40,50]; let m = arr[Math.floor(Math.random()*arr.length)]; return {h, m, str: `${h}시 ${m}분`, digital: `${h}:${m}`}; } }
+        ];
+
+        function getRandomTime() {
+            let totalWeight = clockDifficulties.reduce((sum, d) => sum + d.weight, 0);
+            let rand = Math.random() * totalWeight;
+            for(let i=0; i<clockDifficulties.length; i++) {
+                rand -= clockDifficulties[i].weight;
+                if(rand <= 0) return clockDifficulties[i].gen();
+            }
+            return clockDifficulties[0].gen();
+        }
+
+        /**
+         * [전체 앱 라우팅 로직 (SPA)]
+         */
+        const app = {
+            views: ['home-view', 'flag-view', 'clock-view', 'animal-view'],
+            
+            startGame(type) {
+                if (type === 'flag') {
+                    this.showView('flag-view');
+                    flagGame.init();
+                } else if (type === 'clock') {
+                    this.showView('clock-view');
+                    clockGame.init();
+                } else if (type === 'animal') {
+                    this.showView('animal-view');
+                    animalGame.init();
+                }
+            },
+            
+            goHome() {
+                this.showView('home-view');
+            },
+            
+            // 모든 뷰를 가리고 해당 뷰만 active를 주어 표시
+            showView(viewId) {
+                this.views.forEach(id => {
+                    document.getElementById(id).classList.remove('active');
+                });
+                document.getElementById(viewId).classList.add('active');
+            }
+        };
+
+        /**
+         * [국기 맞추기 게임 로직]
+         */
+        const flagGame = {
+            totalQuestions: 0,
+            correctAnswers: 0,
+            currentCountry: null,
+            wrongAttempts: 0,
+            hintVisible: false,
+
+            init() {
+                this.totalQuestions = 0;
+                this.correctAnswers = 0;
+                this.updateScore();
+                this.startNextQuestion();
+            },
+
+            updateScore() {
+                document.getElementById('flag-total').textContent = this.totalQuestions;
+                document.getElementById('flag-score').textContent = this.correctAnswers;
+            },
+
+            startNextQuestion() {
+                this.wrongAttempts = 0;
+                this.hintVisible = false;
+                
+                // UI 초기화 (힌트, 버튼 숨기기)
+                document.getElementById('hint-section').classList.add('hidden');
+                document.getElementById('btn-next-flag').classList.add('hidden');
+                document.getElementById('flag-feedback').textContent = '';
+                document.getElementById('flag-feedback').className = 'feedback-text';
+                
+                const btnHint = document.getElementById('btn-hint');
+                btnHint.textContent = '💡 힌트 보기';
+                btnHint.classList.remove('btn-gray');
+                btnHint.classList.add('btn-yellow');
+
+                // 랜덤 국기 4개 추출
+                let countries = getMultipleRandomCountries(4);
+                
+                // 그 중 하나를 무작위로 정답 처리
+                this.currentCountry = countries[Math.floor(Math.random() * 4)];
+                
+                // 국기 아이콘 업데이트 (flag-icons 라이브러리 클래스 변경)
+                document.getElementById('flag-display').className = `fi fi-${this.currentCountry.code}`;
+                
+                // 힌트 내용이 있으면 힌트 버튼 보여주기
+                if (this.currentCountry.hintImage || this.currentCountry.hintText) {
+                    document.getElementById('btn-hint').classList.remove('hidden');
+                } else {
+                    document.getElementById('btn-hint').classList.add('hidden');
+                }
+                
+                // 보기 버튼 동적 생성
+                const optionsContainer = document.getElementById('flag-options');
+                optionsContainer.innerHTML = '';
+                
+                countries.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    btn.textContent = c.name;
+                    btn.onclick = () => this.checkAnswer(btn, c);
+                    optionsContainer.appendChild(btn);
+                });
+            },
+
+            // 힌트보기 클릭 시 작동 (토글 기능)
+            toggleHint() {
+                this.hintVisible = !this.hintVisible;
+                const hintSec = document.getElementById('hint-section');
+                const btn = document.getElementById('btn-hint');
+                
+                if (this.hintVisible) {
+                    // 힌트 켜기
+                    hintSec.classList.remove('hidden');
+                    const hintImg = document.getElementById('hint-image');
+                    const hintText = document.getElementById('hint-text');
+                    
+                    if (this.currentCountry.hintImage) {
+                        hintImg.src = this.currentCountry.hintImage;
+                        hintImg.style.display = 'inline-block';
+                    } else {
+                        hintImg.style.display = 'none';
+                    }
+                    hintText.textContent = this.currentCountry.hintText || '힌트가 없어요! 잘 생각해 보세요.';
+                    
+                    btn.textContent = '❌ 힌트 숨기기';
+                    btn.classList.remove('btn-yellow');
+                    btn.classList.add('btn-gray'); /* 회색 버튼으로 전환 효과를 줄 수도 있음 */
+                } else {
+                    // 힌트 끄기
+                    hintSec.classList.add('hidden');
+                    btn.textContent = '💡 힌트 보기';
+                    btn.classList.remove('btn-gray');
+                    btn.classList.add('btn-yellow');
+                }
+            },
+
+            // 답을 선택했을 때 체크하는 부분
+            checkAnswer(btn, clickedCountry) {
+                // 이미 정답이 공개된 상태라면 입력을 처리하지 않음
+                if (!document.getElementById('btn-next-flag').classList.contains('hidden')) return;
+
+                const feedback = document.getElementById('flag-feedback');
+
+                // 정답 로직
+                if (clickedCountry.code === this.currentCountry.code) {
+                    btn.classList.add('correct');
+                    feedback.textContent = '정답이에요! 참 잘했어요 🥳!!';
+                    feedback.className = 'feedback-text success';
+                    this.correctAnswers++;
+                    this.totalQuestions++;
+                    this.updateScore();
+                    this.revealAnswers(); // 나머지 처리
+                } 
+                // 오답 로직
+                else {
+                    btn.classList.add('wrong');
+                    btn.style.pointerEvents = 'none'; // 이미 고른 오답은 재클릭 방지
+                    this.wrongAttempts++;
+                    
+                    if (this.wrongAttempts >= 2) {
+                        // 두 번 틀리면 정답을 자동으로 공개하고 카운트 증가 처리
+                        feedback.textContent = `아쉬워요! 정답은 '${this.currentCountry.name}' 이랍니다!`;
+                        feedback.className = 'feedback-text error';
+                        this.totalQuestions++;
+                        this.updateScore();
+                        this.revealAnswers();
+                    } else {
+                        // 한 번 틀렸을 때의 재도전 메시지
+                        feedback.textContent = '앗, 다시 한번 해볼까? 🤔 (기회가 1번 남았어요!)';
+                        feedback.className = 'feedback-text error';
+                    }
+                }
+            },
+
+            // 화면을 잠금하고 "다음 문제" 버튼 띄우기
+            revealAnswers() {
+                const buttons = document.querySelectorAll('#flag-options .btn-option');
+                buttons.forEach(btn => {
+                    // 혹시 정답을 못맞췄다면 초록색으로 답을 표시해줌
+                    if (btn.textContent === this.currentCountry.name) {
+                        btn.classList.add('correct');
+                    }
+                    btn.style.pointerEvents = 'none'; // 클릭 방지
+                });
+                
+                document.getElementById('btn-next-flag').classList.remove('hidden');
+                document.getElementById('btn-hint').classList.add('hidden'); // 힌트 버튼 숨김
+            },
+
+            nextQuestion() {
+                this.startNextQuestion();
+            }
+        };
+
+        /**
+         * [시계 읽기 게임 로직]
+         */
+        const clockGame = {
+            totalQuestions: 0,
+            correctAnswers: 0,
+            currentTimeObj: null,
+            hintVisible: false,
+            wrongAttempts: 0,
+
+            init() {
+                this.totalQuestions = 0;
+                this.correctAnswers = 0;
+                this.updateScore();
+                this.startNextQuestion();
+            },
+
+            updateScore() {
+                document.getElementById('clock-total').textContent = this.totalQuestions;
+                document.getElementById('clock-score').textContent = this.correctAnswers;
+            },
+
+            startNextQuestion() {
+                this.hintVisible = false;
+                this.wrongAttempts = 0;
+                // UI 초기화
+                document.getElementById('btn-next-clock').classList.add('hidden');
+                
+                const btnHint = document.getElementById('btn-clock-hint');
+                btnHint.classList.remove('hidden');
+                btnHint.textContent = '💡 힌트 보기';
+                btnHint.classList.remove('btn-gray');
+                btnHint.classList.add('btn-yellow');
+                document.getElementById('clock-feedback').textContent = '';
+                document.getElementById('clock-feedback').className = 'feedback-text';
+                
+                // 시계판 숫자 가리기
+                document.querySelector('.analog-clock').classList.remove('show-numbers');
+
+                // 난이도별 시간 랜덤 추출
+                this.currentTimeObj = getRandomTime();
+                
+                // 시계 바늘 각도 계산 및 CSS 회전(Transform) 반영 !!
+                const hourHand = document.getElementById('hour-hand');
+                const minHand = document.getElementById('min-hand');
+                
+                // 분침: 60분에 360도 즉, 1분당 6도 회전
+                const minAngle = this.currentTimeObj.m * 6;
+                // 시침: 12시간에 360도 (1시간에 30도) + 분에 비례한 이동(1분당 0.5도)
+                const hourAngle = (this.currentTimeObj.h % 12) * 30 + (this.currentTimeObj.m * 0.5);
+                
+                hourHand.style.transform = `rotate(${hourAngle}deg)`;
+                minHand.style.transform = `rotate(${minAngle}deg)`;
+
+                // 객관식 4개 생성 (오답 3개 + 정답 1개)
+                let options = [this.currentTimeObj];
+                while(options.length < 4) {
+                    let fakeTime = getRandomTime();
+                    // 보기 안에 동일한 시간이 없도록 확인
+                    if (!options.some(t => t.digital === fakeTime.digital)) {
+                        options.push(fakeTime);
+                    }
+                }
+                
+                // 보기 무작위 섞기
+                options.sort(() => Math.random() - 0.5);
+
+                const optionsContainer = document.getElementById('clock-options');
+                optionsContainer.innerHTML = '';
+
+                // 보기 버튼 렌더링
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    // "3시 정각", "3시 30분" 등 읽기 쉬운 문자로 선택지 제공
+                    btn.textContent = opt.str; 
+                    btn.onclick = () => this.checkAnswer(btn, opt);
+                    optionsContainer.appendChild(btn);
+                });
+            },
+            
+            toggleHint() {
+                this.hintVisible = !this.hintVisible;
+                const clock = document.querySelector('.analog-clock');
+                const btn = document.getElementById('btn-clock-hint');
+
+                if (this.hintVisible) {
+                    clock.classList.add('show-numbers');
+                    btn.textContent = '❌ 힌트 숨기기';
+                    btn.classList.remove('btn-yellow');
+                    btn.classList.add('btn-gray');
+                } else {
+                    clock.classList.remove('show-numbers');
+                    btn.textContent = '💡 힌트 보기';
+                    btn.classList.remove('btn-gray');
+                    btn.classList.add('btn-yellow');
+                }
+            },
+
+            checkAnswer(btn, clickedTime) {
+                if (!document.getElementById('btn-next-clock').classList.contains('hidden')) return;
+
+                const feedback = document.getElementById('clock-feedback');
+
+                // 정답인 경우
+                if (clickedTime.digital === this.currentTimeObj.digital) {
+                    btn.classList.add('correct');
+                    feedback.textContent = '딩동댕! 정말 잘 맞췄어요! ⏰';
+                    feedback.className = 'feedback-text success';
+                    this.correctAnswers++;
+                } 
+                // 오답인 경우
+                else {
+                    btn.classList.add('wrong');
+                    btn.style.pointerEvents = 'none'; // 오답버튼 비활성화
+                    this.wrongAttempts++;
+                    
+                    if (this.wrongAttempts >= 2) {
+                        feedback.textContent = `아쉬워요! 정답은 '${this.currentTimeObj.str}' 이었어요!`;
+                        feedback.className = 'feedback-text error';
+                        
+                        // 정답 버튼 힌트 표시 (revealAnswers에서 일괄 처리되지만 시각적 보완용)
+                        const buttons = document.querySelectorAll('#clock-options .btn-option');
+                        buttons.forEach(b => {
+                            if (b.textContent === this.currentTimeObj.str) {
+                                b.classList.add('correct');
+                            }
+                        });
+                        
+                        this.totalQuestions++;
+                        this.updateScore();
+                        this.revealAnswers();
+                    } else {
+                        feedback.textContent = '앗, 시간을 다시 한 번 자세히 볼까? 🤔 (기회 1번 남음!)';
+                        feedback.className = 'feedback-text error';
+                    }
+                }
+            },
+
+            // 선택 후 버튼 비활성화 및 다음 버튼 생성을 담당
+            revealAnswers() {
+                const buttons = document.querySelectorAll('#clock-options .btn-option');
+                buttons.forEach(btn => {
+                    btn.style.pointerEvents = 'none'; // 클릭 방지
+                });
+                document.getElementById('btn-next-clock').classList.remove('hidden');
+                document.getElementById('btn-clock-hint').classList.add('hidden'); // 힌트 버튼 숨김
+            },
+
+            nextQuestion() {
+                this.startNextQuestion();
+            }
+        };
+
+        /**
+         * [동물 이름 맞추기 게임 로직]
+         */
+        const animalGame = {
+            totalQuestions: 0,
+            correctAnswers: 0,
+            currentAnimal: null,
+            wrongAttempts: 0,
+            hintLevel: 0, // 0: 숨김, 1: 글자수(자리수), 2: 일부 글자 보임
+            revealIndices: [],
+
+            init() {
+                this.totalQuestions = 0;
+                this.correctAnswers = 0;
+                this.updateScore();
+                this.startNextQuestion();
+            },
+
+            updateScore() {
+                document.getElementById('animal-total').textContent = this.totalQuestions;
+                document.getElementById('animal-score').textContent = this.correctAnswers;
+            },
+
+            startNextQuestion() {
+                this.wrongAttempts = 0;
+                this.hintLevel = 0;
+                
+                // UI 초기화
+                document.getElementById('animal-hint-section').classList.add('hidden');
+                document.getElementById('btn-next-animal').classList.add('hidden');
+                document.getElementById('animal-feedback').textContent = '';
+                document.getElementById('animal-feedback').className = 'feedback-text';
+                
+                const btnHint = document.getElementById('btn-animal-hint');
+                btnHint.textContent = '💡 힌트 보기 (1단계)';
+                btnHint.classList.remove('btn-gray');
+                btnHint.classList.add('btn-yellow');
+                btnHint.classList.remove('hidden');
+
+                // 랜덤 동물 4개 추출
+                let animals = getMultipleRandomAnimals(4);
+                this.currentAnimal = animals[Math.floor(Math.random() * 4)];
+                
+                // 동물 이모지 업데이트 (이미지 대신 예쁜 벡터 이모지 연동)
+                document.getElementById('animal-emoji').textContent = this.currentAnimal.emoji;
+                
+                // 힌트 2단계 적용을 위한 인덱스 계산 (단어 길이의 1/3을 올림하여 공개할 글자 수 결정)
+                let wordLength = this.currentAnimal.name.length;
+                let charsRevealCount = Math.max(1, Math.ceil(wordLength / 3));
+                let indices = Array.from({length: wordLength}, (_, i) => i);
+                indices.sort(() => Math.random() - 0.5);
+                this.revealIndices = indices.slice(0, charsRevealCount);
+
+                // 보기 생성
+                const optionsContainer = document.getElementById('animal-options');
+                optionsContainer.innerHTML = '';
+                
+                animals.forEach(a => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    btn.textContent = a.name;
+                    btn.onclick = () => this.checkAnswer(btn, a);
+                    optionsContainer.appendChild(btn);
+                });
+            },
+
+            toggleHint() {
+                this.hintLevel++;
+                if (this.hintLevel > 2) {
+                    this.hintLevel = 0;
+                }
+                
+                const hintSec = document.getElementById('animal-hint-section');
+                const btn = document.getElementById('btn-animal-hint');
+                const hintText = document.getElementById('animal-hint-text');
+                
+                if (this.hintLevel === 0) {
+                    // 힌트 끄기
+                    hintSec.classList.add('hidden');
+                    btn.textContent = '💡 힌트 보기 (1단계)';
+                    btn.classList.remove('btn-gray');
+                    btn.classList.add('btn-yellow');
+                } else {
+                    // 힌트 켜기
+                    hintSec.classList.remove('hidden');
+                    
+                    let word = this.currentAnimal.name.toUpperCase();
+                    let displayArr = [];
+                    
+                    for(let i=0; i<word.length; i++) {
+                        if (this.hintLevel === 1) {
+                            displayArr.push('_'); // 1단계: 모두 빈칸
+                        } else {
+                            if (this.revealIndices.includes(i)) {
+                                displayArr.push(word[i]); // 2단계: 일부 공개
+                            } else {
+                                displayArr.push('_');
+                            }
+                        }
+                    }
+                    
+                    // 글자 폭이 넓은 (예: ELEPHANT) 경우 삐져나감을 방지하기 위해 font-size 줄이고 줄바꿈 허용 (word-break 적용)
+                    hintText.innerHTML = `한국어 뜻: <b>${this.currentAnimal.krName}</b><br><br>단어 힌트:<br><div style="font-size:2.8rem; letter-spacing:5px; font-weight:900; color:#555; word-wrap:break-word; word-break:break-all; line-height:1.4; padding-top:10px;">${displayArr.join('')}</div>`;
+                    
+                    if (this.hintLevel === 1) {
+                        btn.textContent = '💡 힌트 더 보기 (2단계)';
+                        btn.classList.remove('btn-gray');
+                        btn.classList.add('btn-yellow');
+                    } else if (this.hintLevel === 2) {
+                        btn.textContent = '❌ 힌트 숨기기';
+                        btn.classList.remove('btn-yellow');
+                        btn.classList.add('btn-gray');
+                    }
+                }
+            },
+
+            checkAnswer(btn, clickedAnimal) {
+                if (!document.getElementById('btn-next-animal').classList.contains('hidden')) return;
+
+                const feedback = document.getElementById('animal-feedback');
+                const hintSec = document.getElementById('animal-hint-section');
+                const hintText = document.getElementById('animal-hint-text');
+                const hintBtn = document.getElementById('btn-animal-hint');
+                let word = this.currentAnimal.name.toUpperCase();
+
+                if (clickedAnimal.code === this.currentAnimal.code) {
+                    btn.classList.add('correct');
+                    feedback.textContent = '정답이에요! 참 잘했어요!!';
+                    feedback.className = 'feedback-text success';
+                    this.correctAnswers++;
+                    this.totalQuestions++;
+                    this.updateScore();
+                    this.revealAnswers();
+                    
+                    // 정답 공개 시 스펠링 완전 표시 (삐져나가지 않도록 스케일 조정 및 자동바꿈)
+                    hintSec.classList.remove('hidden');
+                    hintText.innerHTML = `한국어 뜻: <b>${this.currentAnimal.krName}</b><br><br>단어 정답:<br><div style="font-size:3rem; letter-spacing:5px; font-weight:900; color:#555; word-wrap:break-word; word-break:break-all; line-height:1.4; padding-top:10px;">${word}</div>`;
+                    hintBtn.classList.add('hidden');
+                } else {
+                    btn.classList.add('wrong');
+                    btn.style.pointerEvents = 'none'; // 오답 비활성화
+                    this.wrongAttempts++;
+                    
+                    if (this.wrongAttempts >= 2) {
+                        feedback.textContent = `아쉬워요! 정답은 '${this.currentAnimal.name}' 이랍니다!`;
+                        feedback.className = 'feedback-text error';
+                        this.totalQuestions++;
+                        this.updateScore();
+                        this.revealAnswers();
+                        
+                        // 기회 2번 소진 시 정답 스펠링 완전 표시 (빨간색으로 강조, 삐져나가지 않게 제한)
+                        hintSec.classList.remove('hidden');
+                        hintText.innerHTML = `정답 스펠링:<br><div style="font-size:3rem; letter-spacing:5px; font-weight:900; color:#E74C3C; word-wrap:break-word; word-break:break-all; line-height:1.4; padding-top:10px;">${word}</div>`;
+                        hintBtn.classList.add('hidden');
+                    } else {
+                        feedback.textContent = '앗, 다시 한번 해볼까? 🤔 (기회 1번 남았어요!)';
+                        feedback.className = 'feedback-text error';
+                    }
+                }
+            },
+
+            revealAnswers() {
+                const buttons = document.querySelectorAll('#animal-options .btn-option');
+                buttons.forEach(btn => {
+                    if (btn.textContent === this.currentAnimal.name) {
+                        btn.classList.add('correct');
+                    }
+                    btn.style.pointerEvents = 'none';
+                });
+                
+                document.getElementById('btn-next-animal').classList.remove('hidden');
+                document.getElementById('btn-animal-hint').classList.add('hidden');
+            },
+
+            nextQuestion() {
+                this.startNextQuestion();
+            }
+        };
+    </script>
+</body>
+</html>
