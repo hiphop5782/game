@@ -75,7 +75,7 @@ function getMultipleRandomCountries(count) {
 
 // 시간 난이도 분류 (맞추기 쉬운 것 우선도 높게)
 const clockDifficulties = [
-    { type: 'hour', weight: 40, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 0, str: h + "시 정각", digital: h + ":00"}; } },
+    { type: 'hour', weight: 40, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 0, str: h + "시 0분", digital: h + ":00"}; } },
     { type: 'half', weight: 30, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 30, str: h + "시 30분(반)", digital: h + ":30"}; } },
     { type: 'quarter', weight: 15, gen: () => { let h = Math.floor(Math.random()*12)+1; let m = Math.random() > 0.5 ? 15 : 45; return {h, m, str: `${h}시 ${m}분`, digital: `${h}:${m}`}; } },
     { type: 'ten', weight: 10, gen: () => { let h = Math.floor(Math.random()*12)+1; let arr = [10,20,40,50]; let m = arr[Math.floor(Math.random()*arr.length)]; return {h, m, str: `${h}시 ${m}분`, digital: `${h}:${m}`}; } },

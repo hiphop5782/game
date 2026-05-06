@@ -606,8 +606,8 @@
                 <!-- 동물 사진 중앙 표시 -->
                 <div class="flag-wrapper">
                     <!-- flag 스타일을 재활용하지만 크기나 여백 등을 조금 다르게 할 수도 있음 여기서는 그대로 사용 -->
-                    <div class="flag-container" style="background:#fff; border-color:#FFDAC1; display:flex; justify-content:center; align-items:center;">
-                        <div id="animal-emoji" style="font-size: 10rem; line-height: 1; user-select: none;">🐶</div>
+                    <div class="flag-container" style="background:#fff; border-color:#FFDAC1; display:flex; justify-content:center; align-items:center; padding: 10px;">
+                        <img id="animal-image" src="./images/animal_dog.png" alt="Animal" style="width: 100%; height: 100%; object-fit: contain; border-radius: var(--radius-sm); mix-blend-mode: multiply;" />
                     </div>
                 </div>
                 
@@ -891,7 +891,7 @@
          */
         const clockDifficulties = [
             // 난이도 1: 정각 (40%)
-            { type: 'hour', weight: 40, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 0, str: h + "시 정각", digital: h + ":00"}; } },
+            { type: 'hour', weight: 40, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 0, str: h + "시 0분", digital: h + ":00"}; } },
             // 난이도 2: 30분 반 (30%) - 이로써 정각+30분이 70%의 비중을 차지함!
             { type: 'half', weight: 30, gen: () => { let h = Math.floor(Math.random()*12)+1; return {h, m: 30, str: h + "시 30분", digital: h + ":30"}; } },
             // 난이도 3: 15분, 45분 단위 (15%)
@@ -1208,6 +1208,9 @@
                     feedback.textContent = '딩동댕! 정말 잘 맞췄어요! ⏰';
                     feedback.className = 'feedback-text success';
                     this.correctAnswers++;
+                    this.totalQuestions++;
+                    this.updateScore();
+                    this.revealAnswers();
                 } 
                 // 오답인 경우
                 else {
@@ -1295,8 +1298,9 @@
                 let animals = getMultipleRandomAnimals(4);
                 this.currentAnimal = animals[Math.floor(Math.random() * 4)];
                 
-                // 동물 이모지 업데이트 (이미지 대신 예쁜 벡터 이모지 연동)
-                document.getElementById('animal-emoji').textContent = this.currentAnimal.emoji;
+                // 동물 사진 업데이트
+                const animalImg = document.getElementById('animal-image');
+                animalImg.src = `./images/animal_${this.currentAnimal.code}.png`;
                 
                 // 힌트 2단계 적용을 위한 인덱스 계산 (단어 길이의 1/3을 올림하여 공개할 글자 수 결정)
                 let wordLength = this.currentAnimal.name.length;
