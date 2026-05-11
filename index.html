@@ -535,6 +535,55 @@
             100% { transform: scale(1); }
         }
 
+        /* [Game 5 & 6] 3x3 표 (스도쿠 & 마방진) 공통 디자인 */
+        .grid-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+        .grid-3x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            background: #FFF;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 4px solid #A1C4FD;
+        }
+        .grid-cell {
+            width: 80px;
+            height: 80px;
+            background: #F8FAFC;
+            border: 3px solid #E2E8F0;
+            border-radius: var(--radius-sm);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #4A4A4A;
+        }
+        .grid-cell.missing-a {
+            background: #FFE4E1;
+            border-color: #FFB7B2;
+            color: #E74C3C;
+            animation: pulseQuestion 1.5s infinite;
+        }
+        .grid-cell.missing-b {
+            background: #E0F7FA;
+            border-color: #A1C4FD;
+            color: #2980B9;
+            animation: pulseQuestion 1.5s infinite 0.5s;
+        }
+        .grid-cell.missing-single {
+            background: #FFF1AA;
+            border-color: #F1C40F;
+            color: #E67E22;
+            animation: pulseQuestion 1.5s infinite;
+        }
+
         /* 반응형 (세로 화면 대응) */
         @media screen and (max-width: 768px) {
             .game-main-row {
@@ -582,6 +631,13 @@
                 <button class="game-card" onclick="app.startGame('sequence')">
                     <div class="card-icon-wrap">🔢</div>
                     <h2>숫자 패턴 맞추기</h2>
+                <button class="game-card" onclick="app.startGame('sudoku')">
+                    <div class="card-icon-wrap">🧩</div>
+                    <h2>미니 스도쿠</h2>
+                </button>
+                <button class="game-card" onclick="app.startGame('magic')">
+                    <div class="card-icon-wrap">🔢</div>
+                    <h2>마법의 숫자</h2>
                 </button>
             </div>
         </section>
@@ -774,6 +830,92 @@
                 </div>
                 
                 <div id="sequence-feedback" class="feedback-text"></div>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [미니 스도쿠 게임 화면] View 컴포넌트 
+             ============================== -->
+        <section id="sudoku-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🔙 홈으로</button>
+                <div class="score-board">점수: <span id="sudoku-score">0</span> / <span id="sudoku-total">0</span></div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">빈칸 A, B에 들어갈 숫자는 무엇일까요?</h2>
+                
+                <div class="grid-wrapper">
+                    <div class="grid-3x3" id="sudoku-grid">
+                        <!-- 동적 생성 -->
+                    </div>
+                </div>
+                
+                <div class="game-main-row">
+                    <div class="game-left-col">
+                        <div class="options-grid" id="sudoku-options"></div>
+                        <div class="action-buttons">
+                            <button id="btn-sudoku-hint" class="btn-action btn-yellow" onclick="sudokuGame.toggleHint()">💡 힌트 보기</button>
+                            <button id="btn-next-sudoku" class="btn-action btn-green hidden" onclick="sudokuGame.nextQuestion()">다음 문제 ➡️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="game-right-col" id="sudoku-hint-wrapper">
+                        <div id="sudoku-hint-section" class="hint-section hidden" style="border-color:#A1C4FD; background:#F0F8FF;">
+                            <h3 style="color: #2980B9; font-size: 2.2rem; margin-bottom: 15px;">✨ 스도쿠 규칙</h3>
+                            <p id="sudoku-hint-text" style="font-size: 1.8rem; line-height: 1.5; font-weight: 700;">
+                                <b>가로줄</b>과 <b>세로줄</b>에 <br>
+                                <span style="font-size: 2.2rem; color: #E74C3C;">1, 2, 3</span>이 <br>
+                                한 번씩만 들어가야 해요!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="sudoku-feedback" class="feedback-text"></div>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [마법의 숫자 게임 화면] View 컴포넌트 
+             ============================== -->
+        <section id="magic-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🔙 홈으로</button>
+                <div class="score-board">점수: <span id="magic-score">0</span> / <span id="magic-total">0</span></div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">물음표(?)에 들어갈 숫자는 무엇일까요?</h2>
+                
+                <div class="grid-wrapper">
+                    <div class="grid-3x3" id="magic-grid" style="border-color: #FFB7B2;">
+                        <!-- 동적 생성 -->
+                    </div>
+                </div>
+                
+                <div class="game-main-row">
+                    <div class="game-left-col">
+                        <div class="options-grid" id="magic-options"></div>
+                        <div class="action-buttons">
+                            <button id="btn-magic-hint" class="btn-action btn-yellow" onclick="magicGame.toggleHint()">💡 힌트 보기</button>
+                            <button id="btn-next-magic" class="btn-action btn-green hidden" onclick="magicGame.nextQuestion()">다음 문제 ➡️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="game-right-col" id="magic-hint-wrapper">
+                        <div id="magic-hint-section" class="hint-section hidden" style="border-color:#F1C40F; background:#FFFDF0; max-width: 500px;">
+                            <h3 style="color: #E67E22; font-size: 2.2rem; margin-bottom: 15px;">✨ 마법의 규칙</h3>
+                            <p style="font-size: 1.8rem; line-height: 1.5; margin-bottom: 10px; font-weight: 700;">
+                                가로, 세로, 대각선의 합이 <br>
+                                모두 <b style="color:#E74C3C; font-size: 2.2rem;">15</b>가 되어야 해요!
+                            </p>
+                            <p id="magic-hint-text" style="font-size: 2.2rem; font-weight: 700; color: #2D3748; background: #FFF; padding: 10px; border-radius: 10px; border: 2px dashed #CBD5E1;">
+                                <!-- 힌트 텍스트 (사과 그림) 동적 생성 -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="magic-feedback" class="feedback-text"></div>
             </div>
         </section>
     </div>
@@ -997,7 +1139,7 @@
          * [전체 앱 라우팅 로직 (SPA)]
          */
         const app = {
-            views: ['home-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view'],
+            views: ['home-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view', 'sudoku-view', 'magic-view'],
             
             startGame(type) {
                 if (type === 'flag') {
@@ -1012,6 +1154,12 @@
                 } else if (type === 'sequence') {
                     this.showView('sequence-view');
                     sequenceGame.init();
+                } else if (type === 'sudoku') {
+                    this.showView('sudoku-view');
+                    sudokuGame.init();
+                } else if (type === 'magic') {
+                    this.showView('magic-view');
+                    magicGame.init();
                 }
             },
             
@@ -1744,6 +1892,484 @@
                 
                 document.getElementById('btn-next-sequence').classList.remove('hidden');
                 document.getElementById('btn-sequence-hint').classList.add('hidden');
+            },
+
+            nextQuestion() {
+                this.startNextQuestion();
+            }
+        };
+
+        /**
+         * [미니 스도쿠 게임 로직]
+         */
+        const sudokuGame = {
+            totalQuestions: 0,
+            correctAnswers: 0,
+            currentGrid: [],
+            idxA: 0,
+            idxB: 0,
+            valA: 0,
+            valB: 0,
+            wrongAttempts: 0,
+            hintVisible: false,
+
+            init() {
+                this.totalQuestions = 0;
+                this.correctAnswers = 0;
+                this.updateScore();
+                this.startNextQuestion();
+            },
+
+            updateScore() {
+                document.getElementById('sudoku-total').textContent = this.totalQuestions;
+                document.getElementById('sudoku-score').textContent = this.correctAnswers;
+            },
+
+            generateLatinSquare() {
+                let base = [[1, 2, 3], [2, 3, 1], [3, 1, 2]];
+                let vals = [1, 2, 3].sort(() => Math.random() - 0.5);
+                let sq = base.map(row => row.map(v => vals[v-1]));
+                sq.sort(() => Math.random() - 0.5); // 행 섞기
+                let cols = [0, 1, 2].sort(() => Math.random() - 0.5);
+                sq = sq.map(row => [row[cols[0]], row[cols[1]], row[cols[2]]]);
+                return sq.flat();
+            },
+
+            startNextQuestion() {
+                this.wrongAttempts = 0;
+                this.hintVisible = false;
+                
+                document.getElementById('sudoku-hint-section').classList.add('hidden');
+                document.getElementById('btn-next-sudoku').classList.add('hidden');
+                document.getElementById('sudoku-feedback').textContent = '';
+                document.getElementById('sudoku-feedback').className = 'feedback-text';
+                
+                const btnHint = document.getElementById('btn-sudoku-hint');
+                btnHint.textContent = '💡 힌트 보기';
+                btnHint.classList.remove('btn-gray');
+                btnHint.classList.add('btn-yellow');
+                btnHint.classList.remove('hidden');
+
+                this.currentGrid = this.generateLatinSquare();
+                
+                // 2개의 빈칸 선택
+                let indices = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5);
+                this.idxA = indices[0];
+                this.idxB = indices[1];
+                this.valA = this.currentGrid[this.idxA];
+                this.valB = this.currentGrid[this.idxB];
+
+                // 그리드 렌더링
+                const gridContainer = document.getElementById('sudoku-grid');
+                gridContainer.innerHTML = '';
+                for(let i=0; i<9; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    if (i === this.idxA) {
+                        cell.classList.add('missing-a');
+                        cell.textContent = 'A';
+                    } else if (i === this.idxB) {
+                        cell.classList.add('missing-b');
+                        cell.textContent = 'B';
+                    } else {
+                        cell.textContent = this.currentGrid[i];
+                    }
+                    gridContainer.appendChild(cell);
+                }
+
+                // 객관식 보기 생성
+                let correctOpt = `A : ${this.valA}, B : ${this.valB}`;
+                let options = [correctOpt];
+                
+                let fake1 = `A : ${this.valB}, B : ${this.valA}`;
+                if(fake1 !== correctOpt) options.push(fake1);
+                
+                while(options.length < 4) {
+                    let rA = Math.floor(Math.random() * 3) + 1;
+                    let rB = Math.floor(Math.random() * 3) + 1;
+                    let opt = `A : ${rA}, B : ${rB}`;
+                    if(!options.includes(opt)) {
+                        options.push(opt);
+                    }
+                }
+                options.sort(() => Math.random() - 0.5);
+
+                const optionsContainer = document.getElementById('sudoku-options');
+                optionsContainer.innerHTML = '';
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    btn.dataset.val = opt;
+                    
+                    // 정규식으로 숫자만 추출하여 안전하게 HTML 생성 (색상코드 안의 알파벳 치환 방지)
+                    let matchA = opt.match(/A : (\d)/);
+                    let matchB = opt.match(/B : (\d)/);
+                    if (matchA && matchB) {
+                        // 콤마를 제거하고 flex gap으로 간격을 넓게 띄워 가독성을 높임
+                        btn.innerHTML = `<div style="display:flex; justify-content:center; gap:30px; align-items:center;">` +
+                                        `<span><span style="color:#E74C3C; background:#FFE4E1; border:2px solid #FFB7B2; padding:2px 10px; border-radius:8px;">A</span> : ${matchA[1]}</span>` + 
+                                        `<span><span style="color:#2980B9; background:#E0F7FA; border:2px solid #A1C4FD; padding:2px 10px; border-radius:8px;">B</span> : ${matchB[1]}</span>` +
+                                        `</div>`;
+                    } else {
+                        btn.textContent = opt; // Fallback
+                    }
+                    
+                    btn.onclick = () => this.checkAnswer(btn, opt, correctOpt);
+                    optionsContainer.appendChild(btn);
+                });
+            },
+
+            toggleHint() {
+                this.hintVisible = !this.hintVisible;
+                const hintSec = document.getElementById('sudoku-hint-section');
+                const btn = document.getElementById('btn-sudoku-hint');
+                
+                if (this.hintVisible) {
+                    hintSec.classList.remove('hidden');
+                    btn.textContent = '❌ 힌트 숨기기';
+                    btn.classList.remove('btn-yellow');
+                    btn.classList.add('btn-gray');
+                } else {
+                    hintSec.classList.add('hidden');
+                    btn.textContent = '💡 힌트 보기';
+                    btn.classList.remove('btn-gray');
+                    btn.classList.add('btn-yellow');
+                }
+            },
+
+            checkAnswer(btn, clickedOpt, correctOpt) {
+                if (!document.getElementById('btn-next-sudoku').classList.contains('hidden')) return;
+                const feedback = document.getElementById('sudoku-feedback');
+
+                if (clickedOpt === correctOpt) {
+                    btn.classList.add('correct');
+                    feedback.textContent = '딩동댕! 정확해요! 참 잘했어요 🥳';
+                    feedback.className = 'feedback-text success';
+                    this.correctAnswers++;
+                    this.totalQuestions++;
+                    this.updateScore();
+                    this.revealAnswers();
+                } else {
+                    btn.classList.add('wrong');
+                    btn.style.pointerEvents = 'none';
+                    this.wrongAttempts++;
+                    
+                    if (this.wrongAttempts >= 2) {
+                        feedback.textContent = `아쉬워요! 정답은 '${correctOpt}' 랍니다!`;
+                        feedback.className = 'feedback-text error';
+                        this.totalQuestions++;
+                        this.updateScore();
+                        this.revealAnswers();
+                    } else {
+                        feedback.textContent = '앗, 가로/세로를 다시 잘 살펴보자! 🤔 (기회 1번 남음)';
+                        feedback.className = 'feedback-text error';
+                    }
+                }
+            },
+
+            revealAnswers() {
+                const buttons = document.querySelectorAll('#sudoku-options .btn-option');
+                buttons.forEach(btn => {
+                    if (btn.dataset.val === `A : ${this.valA}, B : ${this.valB}`) {
+                        btn.classList.add('correct');
+                    }
+                    btn.style.pointerEvents = 'none';
+                });
+                
+                const cells = document.querySelectorAll('#sudoku-grid .grid-cell');
+                if (cells[this.idxA]) {
+                    cells[this.idxA].textContent = this.valA;
+                    cells[this.idxA].classList.remove('missing-a');
+                    cells[this.idxA].style.background = '#A8E6CF';
+                    cells[this.idxA].style.borderColor = '#8FDFBE';
+                }
+                if (cells[this.idxB]) {
+                    cells[this.idxB].textContent = this.valB;
+                    cells[this.idxB].classList.remove('missing-b');
+                    cells[this.idxB].style.background = '#A8E6CF';
+                    cells[this.idxB].style.borderColor = '#8FDFBE';
+                }
+                
+                document.getElementById('btn-next-sudoku').classList.remove('hidden');
+                document.getElementById('btn-sudoku-hint').classList.add('hidden');
+            },
+
+            nextQuestion() {
+                this.startNextQuestion();
+            }
+        };
+
+        /**
+         * [마법의 숫자 게임 로직]
+         */
+        const magicGame = {
+            totalQuestions: 0,
+            correctAnswers: 0,
+            currentGrid: [],
+            idx: 0,
+            val: 0,
+            idxA: 0,
+            idxB: 0,
+            valA: 0,
+            valB: 0,
+            isLevel2: false,
+            wrongAttempts: 0,
+            hintVisible: false,
+
+            init() {
+                this.totalQuestions = 0;
+                this.correctAnswers = 0;
+                this.updateScore();
+                this.startNextQuestion();
+            },
+
+            updateScore() {
+                document.getElementById('magic-total').textContent = this.totalQuestions;
+                document.getElementById('magic-score').textContent = this.correctAnswers;
+            },
+
+            generateMagicSquare() {
+                let sq = [[8, 1, 6], [3, 5, 7], [4, 9, 2]];
+                let rotations = Math.floor(Math.random() * 4);
+                for (let r=0; r<rotations; r++) {
+                    sq = [
+                        [sq[2][0], sq[1][0], sq[0][0]],
+                        [sq[2][1], sq[1][1], sq[0][1]],
+                        [sq[2][2], sq[1][2], sq[0][2]]
+                    ];
+                }
+                if (Math.random() > 0.5) {
+                    sq = sq.map(row => row.reverse());
+                }
+                return sq.flat();
+            },
+
+            startNextQuestion() {
+                this.wrongAttempts = 0;
+                this.hintVisible = false;
+                this.isLevel2 = this.correctAnswers >= 20; // 20문제 이상 맞추면 2칸 비우기
+                
+                document.getElementById('magic-hint-section').classList.add('hidden');
+                document.getElementById('btn-next-magic').classList.add('hidden');
+                document.getElementById('magic-feedback').textContent = '';
+                document.getElementById('magic-feedback').className = 'feedback-text';
+                
+                const btnHint = document.getElementById('btn-magic-hint');
+                btnHint.textContent = '💡 힌트 보기';
+                btnHint.classList.remove('btn-gray');
+                btnHint.classList.add('btn-yellow');
+                btnHint.classList.remove('hidden');
+
+                this.currentGrid = this.generateMagicSquare();
+                
+                if (this.isLevel2) {
+                    let indices = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5);
+                    this.idxA = indices[0];
+                    this.idxB = indices[1];
+                    this.valA = this.currentGrid[this.idxA];
+                    this.valB = this.currentGrid[this.idxB];
+                    document.querySelector('#magic-view .question-text').textContent = "빈칸 A, B에 들어갈 숫자는 무엇일까요? (레벨 2 🔥)";
+                } else {
+                    this.idx = Math.floor(Math.random() * 9);
+                    this.val = this.currentGrid[this.idx];
+                    document.querySelector('#magic-view .question-text').textContent = "물음표(?)에 들어갈 숫자는 무엇일까요?";
+                }
+
+                const gridContainer = document.getElementById('magic-grid');
+                gridContainer.innerHTML = '';
+                for(let i=0; i<9; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    if (this.isLevel2) {
+                        if (i === this.idxA) {
+                            cell.classList.add('missing-a');
+                            cell.textContent = 'A';
+                        } else if (i === this.idxB) {
+                            cell.classList.add('missing-b');
+                            cell.textContent = 'B';
+                        } else {
+                            cell.textContent = this.currentGrid[i];
+                        }
+                    } else {
+                        if (i === this.idx) {
+                            cell.classList.add('missing-single');
+                            cell.textContent = '?';
+                        } else {
+                            cell.textContent = this.currentGrid[i];
+                        }
+                    }
+                    gridContainer.appendChild(cell);
+                }
+
+                // 힌트 내용 생성
+                if (this.isLevel2) {
+                    document.getElementById('magic-hint-text').innerHTML = 
+                        `두 칸이 비어있어요!<br>` +
+                        `<span style="font-size:1.6rem; font-weight:normal; color:#4A4A4A;">가로, 세로, 대각선의 합이 항상 15가 된다는 점을 이용해서 한 칸씩 차근차근 구해보세요! 💪</span>`;
+                } else {
+                    let rowStart = Math.floor(this.idx / 3) * 3;
+                    let otherVals = [];
+                    for(let i=0; i<3; i++) {
+                        if (rowStart + i !== this.idx) {
+                            otherVals.push(this.currentGrid[rowStart + i]);
+                        }
+                    }
+                    let sumOther = otherVals[0] + otherVals[1];
+                    let apples1 = '🍎'.repeat(otherVals[0]);
+                    let apples2 = '🍎'.repeat(otherVals[1]);
+                    document.getElementById('magic-hint-text').innerHTML = 
+                        `${otherVals[0]} 더하기 ${otherVals[1]} 은 ${sumOther} 이에요.<br>` +
+                        `<span style="font-size:1.5rem">${apples1} + ${apples2}</span><br>` +
+                        `15가 되려면 🍎가 몇 개 더 필요할까요?`;
+                }
+
+                // 객관식 보기 생성
+                const optionsContainer = document.getElementById('magic-options');
+                optionsContainer.innerHTML = '';
+                
+                if (this.isLevel2) {
+                    let correctOpt = `A : ${this.valA}, B : ${this.valB}`;
+                    let options = [correctOpt];
+                    let fake1 = `A : ${this.valB}, B : ${this.valA}`;
+                    if(fake1 !== correctOpt) options.push(fake1);
+                    
+                    while(options.length < 4) {
+                        let rA = Math.floor(Math.random() * 9) + 1;
+                        let rB = Math.floor(Math.random() * 9) + 1;
+                        let opt = `A : ${rA}, B : ${rB}`;
+                        if(!options.includes(opt) && rA !== rB) { // 마방진은 중복 숫자가 없음
+                            options.push(opt);
+                        }
+                    }
+                    options.sort(() => Math.random() - 0.5);
+
+                    options.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-option';
+                        btn.dataset.val = opt;
+                        
+                        let matchA = opt.match(/A : (\d)/);
+                        let matchB = opt.match(/B : (\d)/);
+                        if (matchA && matchB) {
+                            btn.innerHTML = `<div style="display:flex; justify-content:center; gap:30px; align-items:center;">` +
+                                            `<span><span style="color:#E74C3C; background:#FFE4E1; border:2px solid #FFB7B2; padding:2px 10px; border-radius:8px;">A</span> : ${matchA[1]}</span>` + 
+                                            `<span><span style="color:#2980B9; background:#E0F7FA; border:2px solid #A1C4FD; padding:2px 10px; border-radius:8px;">B</span> : ${matchB[1]}</span>` +
+                                            `</div>`;
+                        } else {
+                            btn.textContent = opt;
+                        }
+                        
+                        btn.onclick = () => this.checkAnswer(btn, opt, correctOpt);
+                        optionsContainer.appendChild(btn);
+                    });
+                } else {
+                    let options = [this.val];
+                    while(options.length < 4) {
+                        let r = Math.floor(Math.random() * 9) + 1;
+                        if(!options.includes(r)) {
+                            options.push(r);
+                        }
+                    }
+                    options.sort(() => Math.random() - 0.5);
+
+                    options.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-option';
+                        btn.textContent = opt;
+                        btn.onclick = () => this.checkAnswer(btn, opt, this.val);
+                        optionsContainer.appendChild(btn);
+                    });
+                }
+            },
+
+            toggleHint() {
+                this.hintVisible = !this.hintVisible;
+                const hintSec = document.getElementById('magic-hint-section');
+                const btn = document.getElementById('btn-magic-hint');
+                
+                if (this.hintVisible) {
+                    hintSec.classList.remove('hidden');
+                    btn.textContent = '❌ 힌트 숨기기';
+                    btn.classList.remove('btn-yellow');
+                    btn.classList.add('btn-gray');
+                } else {
+                    hintSec.classList.add('hidden');
+                    btn.textContent = '💡 힌트 보기';
+                    btn.classList.remove('btn-gray');
+                    btn.classList.add('btn-yellow');
+                }
+            },
+
+            checkAnswer(btn, clickedOpt, correctOpt) {
+                if (!document.getElementById('btn-next-magic').classList.contains('hidden')) return;
+                const feedback = document.getElementById('magic-feedback');
+
+                if (clickedOpt === correctOpt) {
+                    btn.classList.add('correct');
+                    feedback.textContent = '딩동댕! 정확해요! 참 잘했어요 🥳';
+                    feedback.className = 'feedback-text success';
+                    this.correctAnswers++;
+                    this.totalQuestions++;
+                    this.updateScore();
+                    this.revealAnswers();
+                } else {
+                    btn.classList.add('wrong');
+                    btn.style.pointerEvents = 'none';
+                    this.wrongAttempts++;
+                    
+                    if (this.wrongAttempts >= 2) {
+                        feedback.textContent = `아쉬워요! 정답은 '${correctOpt}' 이랍니다!`;
+                        feedback.className = 'feedback-text error';
+                        this.totalQuestions++;
+                        this.updateScore();
+                        this.revealAnswers();
+                    } else {
+                        feedback.textContent = '앗, 덧셈을 다시 한 번 해볼까? 🤔 (기회 1번 남음)';
+                        feedback.className = 'feedback-text error';
+                    }
+                }
+            },
+
+            revealAnswers() {
+                const buttons = document.querySelectorAll('#magic-options .btn-option');
+                buttons.forEach(btn => {
+                    if (this.isLevel2) {
+                        if (btn.dataset.val === `A : ${this.valA}, B : ${this.valB}`) {
+                            btn.classList.add('correct');
+                        }
+                    } else {
+                        if (parseInt(btn.textContent) === this.val) {
+                            btn.classList.add('correct');
+                        }
+                    }
+                    btn.style.pointerEvents = 'none';
+                });
+                
+                const cells = document.querySelectorAll('#magic-grid .grid-cell');
+                if (this.isLevel2) {
+                    if (cells[this.idxA]) {
+                        cells[this.idxA].textContent = this.valA;
+                        cells[this.idxA].classList.remove('missing-a');
+                        cells[this.idxA].style.background = '#A8E6CF';
+                        cells[this.idxA].style.borderColor = '#8FDFBE';
+                    }
+                    if (cells[this.idxB]) {
+                        cells[this.idxB].textContent = this.valB;
+                        cells[this.idxB].classList.remove('missing-b');
+                        cells[this.idxB].style.background = '#A8E6CF';
+                        cells[this.idxB].style.borderColor = '#8FDFBE';
+                    }
+                } else {
+                    if (cells[this.idx]) {
+                        cells[this.idx].textContent = this.val;
+                        cells[this.idx].classList.remove('missing-single');
+                        cells[this.idx].style.background = '#A8E6CF';
+                        cells[this.idx].style.borderColor = '#8FDFBE';
+                    }
+                }
+                
+                document.getElementById('btn-next-magic').classList.remove('hidden');
+                document.getElementById('btn-magic-hint').classList.add('hidden');
             },
 
             nextQuestion() {
