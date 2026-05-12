@@ -842,7 +842,7 @@
                 <div class="score-board">점수: <span id="sudoku-score">0</span> / <span id="sudoku-total">0</span></div>
             </header>
             <div class="game-content">
-                <h2 class="question-text">빈칸 A, B에 들어갈 숫자는 무엇일까요?</h2>
+                <h2 class="question-text">빈칸 A, B에 들어갈 과일은 무엇일까요?</h2>
                 
                 <div class="grid-wrapper">
                     <div class="grid-3x3" id="sudoku-grid">
@@ -864,7 +864,7 @@
                             <h3 style="color: #2980B9; font-size: 2.2rem; margin-bottom: 15px;">✨ 스도쿠 규칙</h3>
                             <p id="sudoku-hint-text" style="font-size: 1.8rem; line-height: 1.5; font-weight: 700;">
                                 <b>가로줄</b>과 <b>세로줄</b>에 <br>
-                                <span style="font-size: 2.2rem; color: #E74C3C;">1, 2, 3</span>이 <br>
+                                <span style="font-size: 2.2rem; color: #E74C3C;">과일들(🍎, 🍌, 🍇)</span>이 <br>
                                 한 번씩만 들어가야 해요!
                             </p>
                         </div>
@@ -1950,7 +1950,9 @@
                 btnHint.classList.add('btn-yellow');
                 btnHint.classList.remove('hidden');
 
-                this.currentGrid = this.generateLatinSquare();
+                const fruits = ['🍎', '🍌', '🍇'];
+                let gridNums = this.generateLatinSquare();
+                this.currentGrid = gridNums.map(n => fruits[n-1]);
                 
                 // 2개의 빈칸 선택
                 let indices = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5);
@@ -1973,6 +1975,7 @@
                         cell.textContent = 'B';
                     } else {
                         cell.textContent = this.currentGrid[i];
+                        cell.style.fontSize = '3.5rem'; // 과일 이모지 확대
                     }
                     gridContainer.appendChild(cell);
                 }
@@ -1985,8 +1988,8 @@
                 if(fake1 !== correctOpt) options.push(fake1);
                 
                 while(options.length < 4) {
-                    let rA = Math.floor(Math.random() * 3) + 1;
-                    let rB = Math.floor(Math.random() * 3) + 1;
+                    let rA = fruits[Math.floor(Math.random() * 3)];
+                    let rB = fruits[Math.floor(Math.random() * 3)];
                     let opt = `A : ${rA}, B : ${rB}`;
                     if(!options.includes(opt)) {
                         options.push(opt);
@@ -2001,14 +2004,15 @@
                     btn.className = 'btn-option';
                     btn.dataset.val = opt;
                     
-                    // 정규식으로 숫자만 추출하여 안전하게 HTML 생성 (색상코드 안의 알파벳 치환 방지)
-                    let matchA = opt.match(/A : (\d)/);
-                    let matchB = opt.match(/B : (\d)/);
-                    if (matchA && matchB) {
+                    // 문자열 기반 추출 (과일 이모지 등 지원)
+                    let parts = opt.split(', B : ');
+                    if (parts.length === 2) {
+                        let fruitA = parts[0].replace('A : ', '');
+                        let fruitB = parts[1];
                         // 콤마를 제거하고 flex gap으로 간격을 넓게 띄워 가독성을 높임
                         btn.innerHTML = `<div style="display:flex; justify-content:center; gap:30px; align-items:center;">` +
-                                        `<span><span style="color:#E74C3C; background:#FFE4E1; border:2px solid #FFB7B2; padding:2px 10px; border-radius:8px;">A</span> : ${matchA[1]}</span>` + 
-                                        `<span><span style="color:#2980B9; background:#E0F7FA; border:2px solid #A1C4FD; padding:2px 10px; border-radius:8px;">B</span> : ${matchB[1]}</span>` +
+                                        `<span><span style="color:#E74C3C; background:#FFE4E1; border:2px solid #FFB7B2; padding:2px 10px; border-radius:8px;">A</span> : <span style="font-size:2.5rem">${fruitA}</span></span>` + 
+                                        `<span><span style="color:#2980B9; background:#E0F7FA; border:2px solid #A1C4FD; padding:2px 10px; border-radius:8px;">B</span> : <span style="font-size:2.5rem">${fruitB}</span></span>` +
                                         `</div>`;
                     } else {
                         btn.textContent = opt; // Fallback
@@ -2147,7 +2151,7 @@
             startNextQuestion() {
                 this.wrongAttempts = 0;
                 this.hintVisible = false;
-                this.isLevel2 = this.correctAnswers >= 20; // 20문제 이상 맞추면 2칸 비우기
+                this.isLevel2 = true; // 처음부터 2칸 비우기 (난이도 상향)
                 
                 document.getElementById('magic-hint-section').classList.add('hidden');
                 document.getElementById('btn-next-magic').classList.add('hidden');
