@@ -584,6 +584,115 @@
             animation: pulseQuestion 1.5s infinite;
         }
 
+        /* [Maze Game] 랜덤 미로찾기 프로토타입 */
+        .maze-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 20px;
+        }
+        .maze-status-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+        }
+        .maze-stat {
+            background: #F0F7FF;
+            border: 3px solid #BDE0FE;
+            border-radius: var(--radius-md);
+            padding: 10px 18px;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #2C5D85;
+        }
+        .maze-board {
+            --maze-size: min(72vw, 520px);
+            display: grid;
+            width: var(--maze-size);
+            height: var(--maze-size);
+            background: #A1C4FD;
+            border: 8px solid #4A90E2;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            touch-action: none;
+        }
+        .maze-cell {
+            position: relative;
+            background: #FFFDF7;
+        }
+        .maze-cell.wall {
+            background: #4A90E2;
+        }
+        .maze-cell.start {
+            background: #D8F8E7;
+        }
+        .maze-cell.exit {
+            background: #FFE7A8;
+        }
+        .maze-cell.entrance {
+            background: #BDF7D5;
+            box-shadow: inset 8px 0 0 #6BCB77;
+        }
+        .maze-cell.exit-gate {
+            background: #FFD36E;
+            box-shadow: inset -8px 0 0 #FF9F1C;
+        }
+        .maze-cell.hint {
+            background: #FFF1AA;
+        }
+        .maze-cell.visited::after {
+            content: "";
+            position: absolute;
+            inset: 28%;
+            border-radius: 50%;
+            background: rgba(161, 196, 253, 0.55);
+        }
+        .maze-cell.player::before {
+            content: "🙂";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.8rem, 3vw, 1.6rem);
+            z-index: 2;
+        }
+        .maze-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 72px);
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+        .maze-move-btn {
+            width: 72px;
+            height: 62px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: #F0F4F8;
+            color: #34495E;
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+        }
+        .maze-move-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        .maze-feedback {
+            min-height: 40px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            color: #2C5D85;
+        }
+
         /* 반응형 (세로 화면 대응) */
         @media screen and (max-width: 768px) {
             .game-main-row {
@@ -600,6 +709,18 @@
             }
             .hour-hand { height: 60px; }
             .min-hand { height: 90px; }
+            .maze-board {
+                --maze-size: min(88vw, 420px);
+                border-width: 6px;
+            }
+            .maze-controls {
+                grid-template-columns: repeat(3, 64px);
+            }
+            .maze-move-btn {
+                width: 64px;
+                height: 56px;
+                font-size: 1.7rem;
+            }
         }
     </style>
 </head>
@@ -631,6 +752,7 @@
                 <button class="game-card" onclick="app.startGame('sequence')">
                     <div class="card-icon-wrap">🔢</div>
                     <h2>숫자 패턴 맞추기</h2>
+                </button>
                 <button class="game-card" onclick="app.startGame('sudoku')">
                     <div class="card-icon-wrap">🧩</div>
                     <h2>미니 스도쿠</h2>
@@ -638,6 +760,10 @@
                 <button class="game-card" onclick="app.startGame('magic')">
                     <div class="card-icon-wrap">🔢</div>
                     <h2>마법의 숫자</h2>
+                </button>
+                <button class="game-card" onclick="app.startGame('maze')">
+                    <div class="card-icon-wrap">🌀</div>
+                    <h2>미로찾기</h2>
                 </button>
             </div>
         </section>
@@ -786,6 +912,47 @@
                         
                         <div id="clock-feedback" class="feedback-text" style="min-height: 80px;"></div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [미로찾기 게임 화면] View 컴포넌트
+             ============================== -->
+        <section id="maze-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🏠 처음으로</button>
+                <div class="score-board">탈출: <span id="maze-score">0</span>번</div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">출구까지 길을 찾아가 보세요!</h2>
+
+                <div class="maze-panel">
+                    <div class="maze-status-row">
+                        <div class="maze-stat">걸음: <span id="maze-steps">0</span></div>
+                        <div class="maze-stat">힌트: <span id="maze-hints">3</span></div>
+                    </div>
+
+                    <div id="maze-board" class="maze-board" aria-label="랜덤 미로 게임판"></div>
+
+                    <div class="action-buttons" style="justify-content:center; flex-wrap:wrap;">
+                        <button class="btn-action btn-yellow" onclick="mazeGame.showHint()">💡 힌트 보기</button>
+                        <button class="btn-action btn-green" onclick="mazeGame.newMaze()">새 미로</button>
+                    </div>
+
+                    <div class="maze-controls" aria-label="이동 버튼">
+                        <span></span>
+                        <button class="maze-move-btn" onclick="mazeGame.move(0, -1)" aria-label="위로 이동">↑</button>
+                        <span></span>
+                        <button class="maze-move-btn" onclick="mazeGame.move(-1, 0)" aria-label="왼쪽으로 이동">←</button>
+                        <button class="maze-move-btn" onclick="mazeGame.showHint()" aria-label="힌트 보기">?</button>
+                        <button class="maze-move-btn" onclick="mazeGame.move(1, 0)" aria-label="오른쪽으로 이동">→</button>
+                        <span></span>
+                        <button class="maze-move-btn" onclick="mazeGame.move(0, 1)" aria-label="아래로 이동">↓</button>
+                        <span></span>
+                    </div>
+
+                    <div id="maze-feedback" class="maze-feedback"></div>
                 </div>
             </div>
         </section>
@@ -1139,7 +1306,7 @@
          * [전체 앱 라우팅 로직 (SPA)]
          */
         const app = {
-            views: ['home-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view', 'sudoku-view', 'magic-view'],
+            views: ['home-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view', 'sudoku-view', 'magic-view', 'maze-view'],
             
             startGame(type) {
                 if (type === 'flag') {
@@ -1160,6 +1327,9 @@
                 } else if (type === 'magic') {
                     this.showView('magic-view');
                     magicGame.init();
+                } else if (type === 'maze') {
+                    this.showView('maze-view');
+                    mazeGame.init();
                 }
             },
             
@@ -1173,6 +1343,250 @@
                     document.getElementById(id).classList.remove('active');
                 });
                 document.getElementById(viewId).classList.add('active');
+            }
+        };
+
+        /**
+         * [미로찾기 게임 로직]
+         */
+        const mazeGame = {
+            size: 15,
+            grid: [],
+            player: { x: 0, y: 1 },
+            exit: { x: 14, y: 13 },
+            steps: 0,
+            wins: 0,
+            hintsLeft: 3,
+            hintCells: new Set(),
+            visited: new Set(),
+            isFinished: false,
+            keyHandlerReady: false,
+
+            init() {
+                this.wins = 0;
+                this.bindKeyboard();
+                this.updateScore();
+                this.newMaze();
+            },
+
+            bindKeyboard() {
+                if (this.keyHandlerReady) return;
+                this.keyHandlerReady = true;
+
+                document.addEventListener('keydown', (event) => {
+                    const mazeView = document.getElementById('maze-view');
+                    if (!mazeView || !mazeView.classList.contains('active')) return;
+
+                    const moves = {
+                        ArrowUp: [0, -1],
+                        ArrowDown: [0, 1],
+                        ArrowLeft: [-1, 0],
+                        ArrowRight: [1, 0]
+                    };
+
+                    if (moves[event.key]) {
+                        event.preventDefault();
+                        this.move(moves[event.key][0], moves[event.key][1]);
+                    }
+                });
+            },
+
+            newMaze() {
+                this.size = 15;
+                this.exit = { x: this.size - 1, y: this.size - 2 };
+                this.player = { x: 0, y: 1 };
+                this.steps = 0;
+                this.hintsLeft = 3;
+                this.hintCells = new Set();
+                this.visited = new Set([this.key(this.player.x, this.player.y)]);
+                this.isFinished = false;
+                this.generateMaze();
+                this.render();
+                this.updateStats();
+                this.setFeedback('초록 칸에서 시작해서 노란 출구까지 가면 성공이에요.');
+            },
+
+            generateMaze() {
+                this.grid = Array.from({ length: this.size }, () => Array(this.size).fill(1));
+                const stack = [{ x: 1, y: 1 }];
+                this.grid[1][1] = 0;
+
+                while (stack.length) {
+                    const current = stack[stack.length - 1];
+                    const neighbors = this.getCarveNeighbors(current.x, current.y);
+
+                    if (!neighbors.length) {
+                        stack.pop();
+                        continue;
+                    }
+
+                    const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    this.grid[current.y + next.dy / 2][current.x + next.dx / 2] = 0;
+                    this.grid[next.y][next.x] = 0;
+                    stack.push({ x: next.x, y: next.y });
+                }
+
+                this.grid[1][0] = 0;
+                this.grid[1][1] = 0;
+                this.grid[this.exit.y][this.exit.x - 1] = 0;
+                this.grid[this.exit.y][this.exit.x] = 0;
+            },
+
+            getCarveNeighbors(x, y) {
+                const directions = [
+                    { dx: 0, dy: -2 },
+                    { dx: 0, dy: 2 },
+                    { dx: -2, dy: 0 },
+                    { dx: 2, dy: 0 }
+                ].sort(() => Math.random() - 0.5);
+
+                return directions
+                    .map(dir => ({ ...dir, x: x + dir.dx, y: y + dir.dy }))
+                    .filter(next => (
+                        next.x > 0 &&
+                        next.y > 0 &&
+                        next.x < this.size - 1 &&
+                        next.y < this.size - 1 &&
+                        this.grid[next.y][next.x] === 1
+                    ));
+            },
+
+            render() {
+                const board = document.getElementById('maze-board');
+                board.innerHTML = '';
+                board.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
+
+                for (let y = 0; y < this.size; y++) {
+                    for (let x = 0; x < this.size; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'maze-cell';
+                        const cellKey = this.key(x, y);
+
+                        if (this.grid[y][x] === 1) cell.classList.add('wall');
+                        if (x === 0 && y === 1) cell.classList.add('start', 'entrance');
+                        if (x === this.exit.x && y === this.exit.y) cell.classList.add('exit');
+                        if (x === this.exit.x && y === this.exit.y) cell.classList.add('exit-gate');
+                        if (this.visited.has(cellKey)) cell.classList.add('visited');
+                        if (this.hintCells.has(cellKey)) cell.classList.add('hint');
+                        if (x === this.player.x && y === this.player.y) cell.classList.add('player');
+
+                        board.appendChild(cell);
+                    }
+                }
+            },
+
+            move(dx, dy) {
+                if (this.isFinished) return;
+
+                const nextX = this.player.x + dx;
+                const nextY = this.player.y + dy;
+
+                if (!this.canMove(nextX, nextY)) {
+                    this.setFeedback('벽이에요. 다른 길로 가볼까요?');
+                    return;
+                }
+
+                this.player = { x: nextX, y: nextY };
+                this.steps++;
+                this.hintCells.delete(this.key(nextX, nextY));
+                this.visited.add(this.key(nextX, nextY));
+
+                if (nextX === this.exit.x && nextY === this.exit.y) {
+                    this.isFinished = true;
+                    this.wins++;
+                    this.updateScore();
+                    this.setFeedback(`탈출 성공! ${this.steps}걸음 만에 나왔어요.`);
+                } else {
+                    this.setFeedback('');
+                }
+
+                this.updateStats();
+                this.render();
+            },
+
+            canMove(x, y) {
+                return (
+                    x >= 0 &&
+                    y >= 0 &&
+                    x < this.size &&
+                    y < this.size &&
+                    this.grid[y][x] === 0
+                );
+            },
+
+            showHint() {
+                if (this.isFinished) return;
+
+                if (this.hintsLeft <= 0) {
+                    this.setFeedback('이번 미로에서 쓸 수 있는 힌트를 모두 사용했어요.');
+                    return;
+                }
+
+                const path = this.findPath();
+                if (!path.length) {
+                    this.setFeedback('길을 다시 찾고 있어요. 새 미로를 눌러 다시 시작해보세요.');
+                    return;
+                }
+
+                this.hintsLeft--;
+                this.hintCells = new Set(path.slice(1, 7).map(pos => this.key(pos.x, pos.y)));
+                this.setFeedback('노란 길을 따라가면 출구에 가까워져요.');
+                this.updateStats();
+                this.render();
+            },
+
+            findPath() {
+                const startKey = this.key(this.player.x, this.player.y);
+                const exitKey = this.key(this.exit.x, this.exit.y);
+                const queue = [{ ...this.player }];
+                const cameFrom = new Map([[startKey, null]]);
+                const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+
+                while (queue.length) {
+                    const current = queue.shift();
+                    const currentKey = this.key(current.x, current.y);
+
+                    if (currentKey === exitKey) break;
+
+                    directions.forEach(([dx, dy]) => {
+                        const next = { x: current.x + dx, y: current.y + dy };
+                        const nextKey = this.key(next.x, next.y);
+
+                        if (this.canMove(next.x, next.y) && !cameFrom.has(nextKey)) {
+                            cameFrom.set(nextKey, currentKey);
+                            queue.push(next);
+                        }
+                    });
+                }
+
+                if (!cameFrom.has(exitKey)) return [];
+
+                const path = [];
+                let currentKey = exitKey;
+                while (currentKey) {
+                    const [x, y] = currentKey.split(',').map(Number);
+                    path.unshift({ x, y });
+                    currentKey = cameFrom.get(currentKey);
+                }
+
+                return path;
+            },
+
+            key(x, y) {
+                return `${x},${y}`;
+            },
+
+            updateStats() {
+                document.getElementById('maze-steps').textContent = this.steps;
+                document.getElementById('maze-hints').textContent = this.hintsLeft;
+            },
+
+            updateScore() {
+                document.getElementById('maze-score').textContent = this.wins;
+            },
+
+            setFeedback(message) {
+                document.getElementById('maze-feedback').textContent = message;
             }
         };
 
