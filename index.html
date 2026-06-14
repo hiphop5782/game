@@ -651,15 +651,42 @@
             border-radius: 50%;
             background: rgba(161, 196, 253, 0.55);
         }
-        .maze-cell.player::before {
-            content: "🙂";
+        .maze-cell.player .maze-player-character {
             position: absolute;
-            inset: 0;
+            inset: 12%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(0.8rem, 3vw, 1.6rem);
+            background: #FF6B6B;
+            border: 3px solid #C83D3D;
+            border-radius: 24%;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.16);
+            color: white;
+            font-size: clamp(0.7rem, 2.7vw, 1.4rem);
+            font-weight: 700;
+            line-height: 1;
             z-index: 2;
+        }
+        .maze-cell.player .maze-player-character::before,
+        .maze-cell.player .maze-player-character::after {
+            content: "";
+            position: absolute;
+            top: 30%;
+            width: 16%;
+            height: 16%;
+            background: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
+        }
+        .maze-cell.player .maze-player-character::before {
+            left: 26%;
+        }
+        .maze-cell.player .maze-player-character::after {
+            right: 26%;
+        }
+        .maze-player-number {
+            transform: translateY(22%);
+            text-shadow: 0 2px 0 rgba(0,0,0,0.18);
         }
         .maze-controls {
             display: grid;
@@ -1468,7 +1495,10 @@
                         if (x === this.exit.x && y === this.exit.y) cell.classList.add('exit-gate');
                         if (this.visited.has(cellKey)) cell.classList.add('visited');
                         if (this.hintCells.has(cellKey)) cell.classList.add('hint');
-                        if (x === this.player.x && y === this.player.y) cell.classList.add('player');
+                        if (x === this.player.x && y === this.player.y) {
+                            cell.classList.add('player');
+                            cell.innerHTML = '<span class="maze-player-character"><span class="maze-player-number">1</span></span>';
+                        }
 
                         board.appendChild(cell);
                     }
