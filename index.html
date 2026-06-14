@@ -992,6 +992,7 @@
                         <button id="maze-difficulty-easy" class="maze-difficulty-btn" onclick="mazeGame.setDifficulty('easy')">쉬움</button>
                         <button id="maze-difficulty-normal" class="maze-difficulty-btn active" onclick="mazeGame.setDifficulty('normal')">보통</button>
                         <button id="maze-difficulty-hard" class="maze-difficulty-btn" onclick="mazeGame.setDifficulty('hard')">어려움</button>
+                        <button id="maze-difficulty-extreme" class="maze-difficulty-btn" onclick="mazeGame.setDifficulty('extreme')">매우 어려움</button>
                     </div>
 
                     <div id="maze-board" class="maze-board" aria-label="랜덤 미로 게임판"></div>
@@ -1414,9 +1415,10 @@
             size: 15,
             difficulty: 'normal',
             difficulties: {
-                easy: { label: '쉬움', size: 11, hints: 4 },
-                normal: { label: '보통', size: 15, hints: 3 },
-                hard: { label: '어려움', size: 21, hints: 2 }
+                easy: { label: '쉬움', size: 11, hints: 4, branchRate: 0.08 },
+                normal: { label: '보통', size: 15, hints: 3, branchRate: 0.12 },
+                hard: { label: '어려움', size: 21, hints: 2, branchRate: 0.16 },
+                extreme: { label: '매우 어려움', size: 31, hints: 1, branchRate: 0.2 }
             },
             grid: [],
             player: { x: 0, y: 1 },
@@ -1501,10 +1503,28 @@
                     stack.push({ x: next.x, y: next.y });
                 }
 
+                this.addExtraBranches();
                 this.grid[1][0] = 0;
                 this.grid[1][1] = 0;
                 this.grid[this.exit.y][this.exit.x - 1] = 0;
                 this.grid[this.exit.y][this.exit.x] = 0;
+            },
+
+            addExtraBranches() {
+                const config = this.difficulties[this.difficulty];
+
+                for (let y = 1; y < this.size - 1; y++) {
+                    for (let x = 1; x < this.size - 1; x++) {
+                        if (this.grid[y][x] === 0 || Math.random() > config.branchRate) continue;
+
+                        const connectsHorizontal = this.grid[y][x - 1] === 0 && this.grid[y][x + 1] === 0;
+                        const connectsVertical = this.grid[y - 1][x] === 0 && this.grid[y + 1][x] === 0;
+
+                        if (connectsHorizontal || connectsVertical) {
+                            this.grid[y][x] = 0;
+                        }
+                    }
+                }
             },
 
             getCarveNeighbors(x, y) {
