@@ -1415,10 +1415,10 @@
             size: 15,
             difficulty: 'normal',
             difficulties: {
-                easy: { label: '쉬움', size: 11, hints: 4, branchRate: 0.08 },
-                normal: { label: '보통', size: 15, hints: 3, branchRate: 0.12 },
-                hard: { label: '어려움', size: 21, hints: 2, branchRate: 0.16 },
-                extreme: { label: '매우 어려움', size: 31, hints: 1, branchRate: 0.2 }
+                easy: { label: '쉬움', size: 11, hints: 4, randomPickRate: 0.25 },
+                normal: { label: '보통', size: 15, hints: 3, randomPickRate: 0.45 },
+                hard: { label: '어려움', size: 21, hints: 2, randomPickRate: 0.65 },
+                extreme: { label: '매우 어려움', size: 31, hints: 1, randomPickRate: 0.8 }
             },
             grid: [],
             player: { x: 0, y: 1 },
@@ -1484,47 +1484,96 @@
             },
 
             generateMaze() {
+                const config = this.difficulties[this.difficulty];
                 this.grid = Array.from({ length: this.size }, () => Array(this.size).fill(1));
-                const stack = [{ x: 1, y: 1 }];
+                const activeCells = [{ x: 1, y: 1 }];
                 this.grid[1][1] = 0;
 
-                while (stack.length) {
-                    const current = stack[stack.length - 1];
+                while (activeCells.length) {
+                    const index = Math.random() < config.randomPickRate
+                        ? Math.floor(Math.random() * activeCells.length)
+                        : activeCells.length - 1;
+                    const current = activeCells[index];
                     const neighbors = this.getCarveNeighbors(current.x, current.y);
 
                     if (!neighbors.length) {
-                        stack.pop();
+                        activeCells.splice(index, 1);
                         continue;
                     }
 
                     const next = neighbors[Math.floor(Math.random() * neighbors.length)];
                     this.grid[current.y + next.dy / 2][current.x + next.dx / 2] = 0;
                     this.grid[next.y][next.x] = 0;
-                    stack.push({ x: next.x, y: next.y });
+                    activeCells.push({ x: next.x, y: next.y });
                 }
 
-                this.addExtraBranches();
+                this.placeExitAtFarthestEdge();
                 this.grid[1][0] = 0;
                 this.grid[1][1] = 0;
-                this.grid[this.exit.y][this.exit.x - 1] = 0;
-                this.grid[this.exit.y][this.exit.x] = 0;
+                this.openExitGate();
             },
 
-            addExtraBranches() {
-                const config = this.difficulties[this.difficulty];
+            openExitGate() {
+                this.grid[this.exit.y][this.exit.x] = 0;
 
-                for (let y = 1; y < this.size - 1; y++) {
-                    for (let x = 1; x < this.size - 1; x++) {
-                        if (this.grid[y][x] === 0 || Math.random() > config.branchRate) continue;
-
-                        const connectsHorizontal = this.grid[y][x - 1] === 0 && this.grid[y][x + 1] === 0;
-                        const connectsVertical = this.grid[y - 1][x] === 0 && this.grid[y + 1][x] === 0;
-
-                        if (connectsHorizontal || connectsVertical) {
-                            this.grid[y][x] = 0;
-                        }
-                    }
+                if (this.exit.x === 0) {
+                    this.grid[this.exit.y][1] = 0;
+                } else if (this.exit.x === this.size - 1) {
+                    this.grid[this.exit.y][this.size - 2] = 0;
+                } else if (this.exit.y === 0) {
+                    this.grid[1][this.exit.x] = 0;
+                } else if (this.exit.y === this.size - 1) {
+                    this.grid[this.size - 2][this.exit.x] = 0;
                 }
+            },
+
+            placeExitAtFarthestEdge() {
+                const start = { x: 1, y: 1 };
+                const distances = this.getDistancesFrom(start);
+                let best = { x: this.size - 2, y: this.size - 2, distance: -1 };
+
+                distances.forEach((distance, key) => {
+                    const [x, y] = key.split(',').map(Number);
+                    const isEdgePath = x === 1 || y === 1 || x === this.size - 2 || y === this.size - 2;
+                    const isStart = x === start.x && y === start.y;
+
+                    if (isEdgePath && !isStart && distance > best.distance) {
+                        best = { x, y, distance };
+                    }
+                });
+
+                if (best.x === 1) {
+                    this.exit = { x: 0, y: best.y };
+                } else if (best.x === this.size - 2) {
+                    this.exit = { x: this.size - 1, y: best.y };
+                } else if (best.y === 1) {
+                    this.exit = { x: best.x, y: 0 };
+                } else {
+                    this.exit = { x: best.x, y: this.size - 1 };
+                }
+            },
+
+            getDistancesFrom(start) {
+                const queue = [start];
+                const distances = new Map([[this.key(start.x, start.y), 0]]);
+                const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+
+                while (queue.length) {
+                    const current = queue.shift();
+                    const currentDistance = distances.get(this.key(current.x, current.y));
+
+                    directions.forEach(([dx, dy]) => {
+                        const next = { x: current.x + dx, y: current.y + dy };
+                        const nextKey = this.key(next.x, next.y);
+
+                        if (this.canMove(next.x, next.y) && !distances.has(nextKey)) {
+                            distances.set(nextKey, currentDistance + 1);
+                            queue.push(next);
+                        }
+                    });
+                }
+
+                return distances;
             },
 
             getCarveNeighbors(x, y) {
@@ -1559,8 +1608,7 @@
 
                         if (this.grid[y][x] === 1) cell.classList.add('wall');
                         if (x === 0 && y === 1) cell.classList.add('start', 'entrance');
-                        if (x === this.exit.x && y === this.exit.y) cell.classList.add('exit');
-                        if (x === this.exit.x && y === this.exit.y) cell.classList.add('exit-gate');
+                        if (x === this.exit.x && y === this.exit.y) cell.classList.add('exit', 'exit-gate');
                         if (this.visited.has(cellKey)) cell.classList.add('visited');
                         if (this.hintCells.has(cellKey)) cell.classList.add('hint');
                         if (x === this.player.x && y === this.player.y) {
