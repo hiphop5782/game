@@ -608,6 +608,33 @@
             font-weight: 700;
             color: #2C5D85;
         }
+        .maze-difficulty-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .maze-difficulty-btn {
+            border: 3px solid #BDE0FE;
+            border-radius: var(--radius-md);
+            background: #FFFFFF;
+            color: #2C5D85;
+            padding: 10px 18px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.15s, background 0.15s, border-color 0.15s;
+        }
+        .maze-difficulty-btn:hover {
+            transform: translateY(-2px);
+            background: #F0F7FF;
+        }
+        .maze-difficulty-btn.active {
+            background: #A8E6CF;
+            border-color: #6BCB77;
+            color: #245C3C;
+        }
         .maze-board {
             --maze-size: min(72vw, 520px);
             display: grid;
@@ -956,8 +983,15 @@
 
                 <div class="maze-panel">
                     <div class="maze-status-row">
+                        <div class="maze-stat">난이도: <span id="maze-difficulty-label">보통</span></div>
                         <div class="maze-stat">걸음: <span id="maze-steps">0</span></div>
                         <div class="maze-stat">힌트: <span id="maze-hints">3</span></div>
+                    </div>
+
+                    <div class="maze-difficulty-row" aria-label="미로 난이도 선택">
+                        <button id="maze-difficulty-easy" class="maze-difficulty-btn" onclick="mazeGame.setDifficulty('easy')">쉬움</button>
+                        <button id="maze-difficulty-normal" class="maze-difficulty-btn active" onclick="mazeGame.setDifficulty('normal')">보통</button>
+                        <button id="maze-difficulty-hard" class="maze-difficulty-btn" onclick="mazeGame.setDifficulty('hard')">어려움</button>
                     </div>
 
                     <div id="maze-board" class="maze-board" aria-label="랜덤 미로 게임판"></div>
@@ -1378,6 +1412,12 @@
          */
         const mazeGame = {
             size: 15,
+            difficulty: 'normal',
+            difficulties: {
+                easy: { label: '쉬움', size: 11, hints: 4 },
+                normal: { label: '보통', size: 15, hints: 3 },
+                hard: { label: '어려움', size: 21, hints: 2 }
+            },
             grid: [],
             player: { x: 0, y: 1 },
             exit: { x: 14, y: 13 },
@@ -1393,6 +1433,13 @@
                 this.wins = 0;
                 this.bindKeyboard();
                 this.updateScore();
+                this.newMaze();
+            },
+
+            setDifficulty(level) {
+                if (!this.difficulties[level]) return;
+
+                this.difficulty = level;
                 this.newMaze();
             },
 
@@ -1419,11 +1466,12 @@
             },
 
             newMaze() {
-                this.size = 15;
+                const config = this.difficulties[this.difficulty];
+                this.size = config.size;
                 this.exit = { x: this.size - 1, y: this.size - 2 };
                 this.player = { x: 0, y: 1 };
                 this.steps = 0;
-                this.hintsLeft = 3;
+                this.hintsLeft = config.hints;
                 this.hintCells = new Set();
                 this.visited = new Set([this.key(this.player.x, this.player.y)]);
                 this.isFinished = false;
@@ -1607,8 +1655,15 @@
             },
 
             updateStats() {
+                const config = this.difficulties[this.difficulty];
+                document.getElementById('maze-difficulty-label').textContent = config.label;
                 document.getElementById('maze-steps').textContent = this.steps;
                 document.getElementById('maze-hints').textContent = this.hintsLeft;
+
+                Object.keys(this.difficulties).forEach(level => {
+                    const btn = document.getElementById(`maze-difficulty-${level}`);
+                    if (btn) btn.classList.toggle('active', level === this.difficulty);
+                });
             },
 
             updateScore() {
