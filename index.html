@@ -149,6 +149,97 @@
             color: #FF9A9E;
         }
 
+        /* [User Profiles & Records] 로컬 프로필/기록 */
+        .profile-panel {
+            background: #FFFFFF;
+            border: 4px solid #BDE0FE;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 18px;
+            margin: 0 auto 32px;
+            max-width: 760px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 14px;
+        }
+        .profile-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #34495E;
+        }
+        .profile-field input,
+        .profile-field select {
+            border: 3px solid #BDE0FE;
+            border-radius: var(--radius-md);
+            background: #F7FBFF;
+            color: #34495E;
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: 700;
+            min-width: 150px;
+            padding: 10px 12px;
+        }
+        .profile-chip {
+            background: #FFF1AA;
+            border: 3px solid #FFE681;
+            border-radius: var(--radius-md);
+            color: #8A5A00;
+            font-size: 1.25rem;
+            font-weight: 700;
+            padding: 10px 16px;
+        }
+        .record-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            width: 100%;
+            margin-bottom: 22px;
+        }
+        .record-summary-card {
+            background: #F7FBFF;
+            border: 3px solid #BDE0FE;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+        }
+        .record-summary-card strong {
+            display: block;
+            color: #FF9A9E;
+            font-size: 2rem;
+            margin-top: 6px;
+        }
+        .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .record-item {
+            background: #FFFFFF;
+            border: 3px solid #E2E8F0;
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 8px 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #34495E;
+        }
+        .record-empty {
+            color: #777;
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 30px 0;
+        }
+
         /* [Game Views Shared] 게임 화면 공통 적용 */
         .game-header {
             display: flex;
@@ -927,6 +1018,19 @@
                 <h1>✨ 미니게임 놀이터 ✨</h1>
                 <p>재미있는 게임을 골라보세요!</p>
             </header>
+            <div class="profile-panel">
+                <div class="profile-chip">플레이어: <span id="active-user-name">게스트</span></div>
+                <label class="profile-field">
+                    프로필 선택
+                    <select id="user-select" onchange="gameRecords.setActiveUser(this.value)"></select>
+                </label>
+                <label class="profile-field">
+                    새 이름
+                    <input id="new-user-name" type="text" maxlength="12" placeholder="이름 입력">
+                </label>
+                <button class="btn-action btn-green" onclick="gameRecords.addUserFromInput()">추가</button>
+                <button class="btn-action btn-yellow" onclick="app.showRecords()">기록 보기</button>
+            </div>
             <div class="game-list">
                 <button class="game-card" onclick="app.startGame('flag')">
                     <!-- 별도 이미지 파일 대신 이모지 활용으로 외부 의존도 제거 -->
@@ -961,6 +1065,21 @@
                     <div class="card-icon-wrap">🖼️</div>
                     <h2>사진 퍼즐</h2>
                 </button>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [플레이 기록 화면] View 컴포넌트
+             ============================== -->
+        <section id="records-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🏠 처음으로</button>
+                <div class="score-board">플레이어: <span id="records-user-name">게스트</span></div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">플레이 기록</h2>
+                <div id="record-summary" class="record-summary-grid"></div>
+                <div id="record-list" class="record-list"></div>
             </div>
         </section>
 
@@ -1555,10 +1674,179 @@
         }
 
         /**
+         * [로컬 프로필/플레이 기록 저장소]
+         */
+        const gameRecords = {
+            storageKey: 'miniGamePlayRecords.v1',
+            data: {
+                users: [],
+                activeUserId: '',
+                records: []
+            },
+
+            init() {
+                this.load();
+                this.ensureDefaultUser();
+                this.renderUserControls();
+            },
+
+            load() {
+                try {
+                    const saved = JSON.parse(localStorage.getItem(this.storageKey));
+                    if (saved && Array.isArray(saved.users) && Array.isArray(saved.records)) {
+                        this.data = saved;
+                    }
+                } catch (error) {
+                    this.data = { users: [], activeUserId: '', records: [] };
+                }
+            },
+
+            save() {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+            },
+
+            ensureDefaultUser() {
+                if (!this.data.users.length) {
+                    const guest = this.createUser('게스트');
+                    this.data.users.push(guest);
+                    this.data.activeUserId = guest.id;
+                    this.save();
+                }
+
+                if (!this.data.users.some(user => user.id === this.data.activeUserId)) {
+                    this.data.activeUserId = this.data.users[0].id;
+                    this.save();
+                }
+            },
+
+            createUser(name) {
+                return {
+                    id: `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    name,
+                    createdAt: new Date().toISOString()
+                };
+            },
+
+            getActiveUser() {
+                return this.data.users.find(user => user.id === this.data.activeUserId) || this.data.users[0];
+            },
+
+            addUserFromInput() {
+                const input = document.getElementById('new-user-name');
+                const name = input.value.trim();
+
+                if (!name) return;
+
+                const user = this.createUser(name);
+                this.data.users.push(user);
+                this.data.activeUserId = user.id;
+                input.value = '';
+                this.save();
+                this.renderUserControls();
+            },
+
+            setActiveUser(userId) {
+                if (!this.data.users.some(user => user.id === userId)) return;
+
+                this.data.activeUserId = userId;
+                this.save();
+                this.renderUserControls();
+                this.renderRecords();
+            },
+
+            recordGameResult(record) {
+                const activeUser = this.getActiveUser();
+                const endedAt = record.endedAt || new Date().toISOString();
+                const startedAt = record.startedAt || endedAt;
+                const durationSec = Math.max(0, Math.round((new Date(endedAt) - new Date(startedAt)) / 1000));
+
+                this.data.records.unshift({
+                    id: `record_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    userId: activeUser.id,
+                    gameType: record.gameType,
+                    gameName: record.gameName,
+                    difficulty: record.difficulty || '기본',
+                    startedAt,
+                    endedAt,
+                    durationSec,
+                    success: Boolean(record.success),
+                    score: record.score || 0,
+                    hintsUsed: record.hintsUsed || 0,
+                    stats: record.stats || {}
+                });
+
+                this.save();
+            },
+
+            renderUserControls() {
+                const activeUser = this.getActiveUser();
+                const activeName = document.getElementById('active-user-name');
+                const select = document.getElementById('user-select');
+
+                if (activeName) activeName.textContent = activeUser.name;
+                if (!select) return;
+
+                select.innerHTML = '';
+                this.data.users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.name;
+                    option.selected = user.id === activeUser.id;
+                    select.appendChild(option);
+                });
+            },
+
+            renderRecords() {
+                const activeUser = this.getActiveUser();
+                const records = this.data.records.filter(record => record.userId === activeUser.id);
+                const userName = document.getElementById('records-user-name');
+                const summary = document.getElementById('record-summary');
+                const list = document.getElementById('record-list');
+
+                if (userName) userName.textContent = activeUser.name;
+                if (!summary || !list) return;
+
+                const completed = records.filter(record => record.success).length;
+                const totalHints = records.reduce((sum, record) => sum + (record.hintsUsed || 0), 0);
+                const bestMaze = records
+                    .filter(record => record.gameType === 'maze' && record.success)
+                    .sort((a, b) => (a.stats.steps || 9999) - (b.stats.steps || 9999))[0];
+
+                summary.innerHTML = `
+                    <div class="record-summary-card">전체 플레이<strong>${records.length}</strong></div>
+                    <div class="record-summary-card">성공 기록<strong>${completed}</strong></div>
+                    <div class="record-summary-card">힌트 사용<strong>${totalHints}</strong></div>
+                    <div class="record-summary-card">미로 최고<strong>${bestMaze ? `${bestMaze.stats.steps}걸음` : '-'}</strong></div>
+                `;
+
+                if (!records.length) {
+                    list.innerHTML = '<div class="record-empty">아직 기록이 없어요. 게임을 하나 완료해볼까요?</div>';
+                    return;
+                }
+
+                list.innerHTML = records.slice(0, 30).map(record => `
+                    <div class="record-item">
+                        <span>${record.gameName || record.gameType}</span>
+                        <span>${record.difficulty}</span>
+                        <span>${record.success ? '성공' : '진행 종료'}</span>
+                        <span>${record.durationSec}초</span>
+                        <span>힌트 ${record.hintsUsed}</span>
+                        <span>${this.formatDate(record.endedAt)}</span>
+                    </div>
+                `).join('');
+            },
+
+            formatDate(value) {
+                const date = new Date(value);
+                return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            }
+        };
+
+        /**
          * [전체 앱 라우팅 로직 (SPA)]
          */
         const app = {
-            views: ['home-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view', 'sudoku-view', 'magic-view', 'maze-view', 'photo-puzzle-view'],
+            views: ['home-view', 'records-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view', 'sudoku-view', 'magic-view', 'maze-view', 'photo-puzzle-view'],
             
             startGame(type) {
                 if (type === 'flag') {
@@ -1590,6 +1878,12 @@
             
             goHome() {
                 this.showView('home-view');
+                gameRecords.renderUserControls();
+            },
+
+            showRecords() {
+                this.showView('records-view');
+                gameRecords.renderRecords();
             },
             
             // 모든 뷰를 가리고 해당 뷰만 active를 주어 표시
@@ -1600,6 +1894,10 @@
                 document.getElementById(viewId).classList.add('active');
             }
         };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            gameRecords.init();
+        });
 
         /**
          * [미로찾기 게임 로직]
@@ -1619,6 +1917,8 @@
             steps: 0,
             wins: 0,
             hintsLeft: 3,
+            hintsUsed: 0,
+            startedAt: '',
             hintCells: new Set(),
             visited: new Set(),
             isFinished: false,
@@ -1667,6 +1967,8 @@
                 this.player = { x: 0, y: 1 };
                 this.steps = 0;
                 this.hintsLeft = config.hints;
+                this.hintsUsed = 0;
+                this.startedAt = new Date().toISOString();
                 this.hintCells = new Set();
                 this.visited = new Set([this.key(this.player.x, this.player.y)]);
                 this.isFinished = false;
@@ -1831,9 +2133,25 @@
                 this.visited.add(this.key(nextX, nextY));
 
                 if (nextX === this.exit.x && nextY === this.exit.y) {
+                    const config = this.difficulties[this.difficulty];
                     this.isFinished = true;
                     this.wins++;
                     this.updateScore();
+                    gameRecords.recordGameResult({
+                        gameType: 'maze',
+                        gameName: '미로찾기',
+                        difficulty: config.label,
+                        startedAt: this.startedAt,
+                        success: true,
+                        score: Math.max(1, (this.size * this.size) - this.steps - (this.hintsUsed * 10)),
+                        hintsUsed: this.hintsUsed,
+                        stats: {
+                            steps: this.steps,
+                            mazeSize: this.size,
+                            exitX: this.exit.x,
+                            exitY: this.exit.y
+                        }
+                    });
                     this.setFeedback(`탈출 성공! ${this.steps}걸음 만에 나왔어요.`);
                 } else {
                     this.setFeedback('');
@@ -1868,6 +2186,7 @@
                 }
 
                 this.hintsLeft--;
+                this.hintsUsed++;
                 this.hintCells = new Set(path.slice(1, 7).map(pos => this.key(pos.x, pos.y)));
                 this.setFeedback('노란 길을 따라가면 출구에 가까워져요.');
                 this.updateStats();
@@ -1948,6 +2267,10 @@
             cols: 3,
             draggedPiece: null,
             selectedPiece: null,
+            startedAt: '',
+            hintsUsed: 0,
+            moves: 0,
+            completed: false,
             initialized: false,
 
             init() {
@@ -2042,6 +2365,10 @@
                 this.draggedPiece = null;
                 this.clearSelection();
                 this.hideVideoPlayer();
+                this.startedAt = new Date().toISOString();
+                this.hintsUsed = 0;
+                this.moves = 0;
+                this.completed = false;
 
                 const board = document.getElementById('photo-puzzle-board');
                 const tray = document.getElementById('photo-puzzle-tray');
@@ -2144,6 +2471,7 @@
                 slot.appendChild(piece);
                 this.draggedPiece = null;
                 this.clearSelection();
+                this.moves++;
                 this.updateScore();
                 this.checkComplete();
             },
@@ -2196,6 +2524,7 @@
                 correctPiece.classList.add('locked');
                 correctPiece.draggable = false;
                 this.clearSelection();
+                this.hintsUsed++;
                 this.updateScore();
                 this.checkComplete();
 
@@ -2224,7 +2553,25 @@
             },
 
             checkComplete() {
-                if (this.isComplete()) {
+                if (this.isComplete() && !this.completed) {
+                    this.completed = true;
+                    gameRecords.recordGameResult({
+                        gameType: 'photoPuzzle',
+                        gameName: this.mediaType === 'video' ? '동영상 퍼즐' : '사진 퍼즐',
+                        difficulty: `${this.rows} x ${this.cols}`,
+                        startedAt: this.startedAt,
+                        success: true,
+                        score: Math.max(1, (this.rows * this.cols * 10) - (this.hintsUsed * 5)),
+                        hintsUsed: this.hintsUsed,
+                        stats: {
+                            rows: this.rows,
+                            cols: this.cols,
+                            pieces: this.rows * this.cols,
+                            moves: this.moves,
+                            mediaType: this.mediaType || 'image'
+                        }
+                    });
+
                     if (this.mediaType === 'video' && this.videoUrl) {
                         this.setFeedback('완성! 이제 동영상을 볼 수 있어요.');
                         this.showVideoPlayer();

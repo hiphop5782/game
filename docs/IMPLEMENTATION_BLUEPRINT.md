@@ -27,6 +27,7 @@
 ```js
 views: [
   'home-view',
+  'records-view',
   'flag-view',
   'clock-view',
   'animal-view',
@@ -37,6 +38,99 @@ views: [
   'photo-puzzle-view'
 ]
 ```
+
+기록 화면 진입용 메서드도 있어야 합니다.
+
+```js
+showRecords() {
+  this.showView('records-view');
+  gameRecords.renderRecords();
+}
+```
+
+`goHome()`에서는 홈으로 돌아간 뒤 프로필 UI를 갱신합니다.
+
+```js
+goHome() {
+  this.showView('home-view');
+  gameRecords.renderUserControls();
+}
+```
+
+## 로컬 유저/기록 시스템
+
+객체 이름은 `gameRecords`입니다. `app`보다 먼저 선언되어야 하며, 페이지 로드 후 초기화됩니다.
+
+```js
+window.addEventListener('DOMContentLoaded', () => {
+  gameRecords.init();
+});
+```
+
+저장 키:
+
+```js
+storageKey: 'miniGamePlayRecords.v1'
+```
+
+기본 데이터:
+
+```js
+data: {
+  users: [],
+  activeUserId: '',
+  records: []
+}
+```
+
+필수 메서드:
+
+- `init()`
+- `load()`
+- `save()`
+- `ensureDefaultUser()`
+- `createUser(name)`
+- `getActiveUser()`
+- `addUserFromInput()`
+- `setActiveUser(userId)`
+- `recordGameResult(record)`
+- `renderUserControls()`
+- `renderRecords()`
+- `formatDate(value)`
+
+`ensureDefaultUser()`는 유저가 없을 때 `게스트`를 자동 생성해야 합니다.
+
+`recordGameResult(record)`는 아래 공통 형태로 저장합니다.
+
+```js
+{
+  id: "record_...",
+  userId: activeUser.id,
+  gameType: record.gameType,
+  gameName: record.gameName,
+  difficulty: record.difficulty || "기본",
+  startedAt,
+  endedAt,
+  durationSec,
+  success: Boolean(record.success),
+  score: record.score || 0,
+  hintsUsed: record.hintsUsed || 0,
+  stats: record.stats || {}
+}
+```
+
+홈 화면에는 아래 id들이 필요합니다.
+
+- `active-user-name`
+- `user-select`
+- `new-user-name`
+
+기록 화면에는 아래 id들이 필요합니다.
+
+- `records-view`
+- `records-user-name`
+- `record-summary`
+- `record-list`
 
 `app.startGame(type)`에는 다음 분기가 있어야 합니다.
 
@@ -188,6 +282,47 @@ keyHandlerReady: false
 - `hintsLeft <= 0`이면 메시지 표시
 - 경로가 있으면 `path.slice(1, 7)`만 `hintCells`에 저장
 - 즉, 전체 경로가 아니라 다음 최대 6칸만 보여줍니다.
+
+## 미로 기록 저장
+
+`mazeGame`에는 아래 상태가 필요합니다.
+
+```js
+hintsUsed: 0,
+startedAt: ''
+```
+
+`newMaze()`에서:
+
+- `startedAt = new Date().toISOString()`
+- `hintsUsed = 0`
+
+`showHint()`에서 실제 힌트를 보여줄 때:
+
+- `hintsLeft--`
+- `hintsUsed++`
+
+출구 도착 시 `gameRecords.recordGameResult()`를 호출합니다.
+
+필수 저장값:
+
+```js
+{
+  gameType: 'maze',
+  gameName: '미로찾기',
+  difficulty: config.label,
+  startedAt: this.startedAt,
+  success: true,
+  score: Math.max(1, (this.size * this.size) - this.steps - (this.hintsUsed * 10)),
+  hintsUsed: this.hintsUsed,
+  stats: {
+    steps: this.steps,
+    mazeSize: this.size,
+    exitX: this.exit.x,
+    exitY: this.exit.y
+  }
+}
+```
 
 ## 사진/동영상 퍼즐 CSS
 
@@ -365,6 +500,51 @@ HTML Drag and Drop은 모바일에서 불안정하므로 선택 배치 방식을
 
 `isComplete()`는 모든 슬롯에 정답 조각이 있는지 확인합니다.
 
+## 사진/동영상 퍼즐 기록 저장
+
+`photoPuzzleGame`에는 아래 상태가 필요합니다.
+
+```js
+startedAt: '',
+hintsUsed: 0,
+moves: 0,
+completed: false
+```
+
+`createPuzzle()`에서:
+
+- `startedAt = new Date().toISOString()`
+- `hintsUsed = 0`
+- `moves = 0`
+- `completed = false`
+
+`placePiece()`에서 실제 배치가 일어나면 `moves++`합니다.
+
+`useHint()`에서 실제 힌트가 적용되면 `hintsUsed++`합니다.
+
+`checkComplete()`는 `this.completed`가 false일 때만 기록을 저장해야 합니다. 중복 저장을 막기 위해 완성 직후 `this.completed = true`로 바꿉니다.
+
+필수 저장값:
+
+```js
+{
+  gameType: 'photoPuzzle',
+  gameName: this.mediaType === 'video' ? '동영상 퍼즐' : '사진 퍼즐',
+  difficulty: `${this.rows} x ${this.cols}`,
+  startedAt: this.startedAt,
+  success: true,
+  score: Math.max(1, (this.rows * this.cols * 10) - (this.hintsUsed * 5)),
+  hintsUsed: this.hintsUsed,
+  stats: {
+    rows: this.rows,
+    cols: this.cols,
+    pieces: this.rows * this.cols,
+    moves: this.moves,
+    mediaType: this.mediaType || 'image'
+  }
+}
+```
+
 완성 시:
 
 - 사진이면 “완성! 사진 퍼즐을 다 맞췄어요.” 표시
@@ -397,4 +577,3 @@ git diff --check -- index.html docs
 ```powershell
 node -e "const fs=require('fs');const html=fs.readFileSync('C:/Users/PC/vs-workspace/game/game/index.html','utf8');const scripts=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]); for (const s of scripts) new Function(s); console.log('target script parse ok:', scripts.length);"
 ```
-

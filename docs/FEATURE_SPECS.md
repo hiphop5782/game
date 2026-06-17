@@ -1,5 +1,71 @@
 # 기능명세
 
+## 로컬 유저/플레이 기록
+
+### 목적
+
+서버 없이 같은 기기 안에서 플레이어별 기록을 저장하고 확인하는 기능입니다. 저장소는 브라우저 `localStorage`입니다.
+
+### 저장 키
+
+```js
+miniGamePlayRecords.v1
+```
+
+### 데이터 구조
+
+```js
+{
+  users: [
+    {
+      id: "user_...",
+      name: "게스트",
+      createdAt: "2026-06-17T..."
+    }
+  ],
+  activeUserId: "user_...",
+  records: [
+    {
+      id: "record_...",
+      userId: "user_...",
+      gameType: "maze",
+      gameName: "미로찾기",
+      difficulty: "어려움",
+      startedAt: "2026-06-17T...",
+      endedAt: "2026-06-17T...",
+      durationSec: 123,
+      success: true,
+      score: 100,
+      hintsUsed: 1,
+      stats: {}
+    }
+  ]
+}
+```
+
+### 화면
+
+홈 화면 상단에 프로필 패널이 있습니다.
+
+- 현재 플레이어 표시
+- 프로필 선택
+- 새 이름 입력
+- 추가 버튼
+- 기록 보기 버튼
+
+`records-view` 화면에서는 현재 플레이어의 기록만 보여줍니다.
+
+요약 카드:
+
+- 전체 플레이
+- 성공 기록
+- 힌트 사용
+- 미로 최고 기록
+
+### 기록 저장 방식
+
+각 게임은 완료 시 `gameRecords.recordGameResult(record)`를 호출합니다. 공통 필드는 `gameRecords`가 보정하고, 게임별 상세값은 `stats`에 담습니다.
+
 ## 미로찾기
 
 ### 목적
