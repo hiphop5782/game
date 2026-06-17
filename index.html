@@ -747,6 +747,118 @@
             color: #2C5D85;
         }
 
+        /* [Photo Puzzle Game] 사진 조각 맞추기 */
+        .photo-puzzle-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+            width: 100%;
+        }
+        .photo-puzzle-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 14px;
+            width: 100%;
+        }
+        .photo-puzzle-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #34495E;
+        }
+        .photo-puzzle-field input {
+            min-width: 110px;
+            border: 3px solid #BDE0FE;
+            border-radius: var(--radius-md);
+            background: #FFFFFF;
+            padding: 10px 12px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 700;
+            color: #34495E;
+        }
+        .photo-puzzle-stage {
+            display: grid;
+            grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+            gap: 22px;
+            width: 100%;
+            align-items: start;
+        }
+        .photo-puzzle-area {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        .photo-puzzle-area h3 {
+            font-size: 1.4rem;
+            color: #34495E;
+        }
+        .photo-puzzle-board,
+        .photo-puzzle-tray {
+            --puzzle-size: min(42vw, 420px);
+            display: grid;
+            width: var(--puzzle-size);
+            min-height: var(--puzzle-size);
+            border-radius: var(--radius-md);
+            background: #F7FBFF;
+            border: 5px solid #BDE0FE;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        .photo-puzzle-board {
+            height: var(--puzzle-size);
+        }
+        .photo-puzzle-tray {
+            align-content: start;
+            gap: 4px;
+            padding: 8px;
+            overflow: visible;
+        }
+        .photo-puzzle-slot {
+            position: relative;
+            background:
+                linear-gradient(45deg, rgba(189,224,254,0.25) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(189,224,254,0.25) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(189,224,254,0.25) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(189,224,254,0.25) 75%);
+            background-size: 18px 18px;
+            background-position: 0 0, 0 9px, 9px -9px, -9px 0px;
+            border: 1px dashed rgba(74, 144, 226, 0.35);
+        }
+        .photo-puzzle-piece {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-repeat: no-repeat;
+            border: 2px solid #FFFFFF;
+            cursor: grab;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+            touch-action: none;
+        }
+        .photo-puzzle-slot > .photo-puzzle-piece {
+            height: 100%;
+            aspect-ratio: auto;
+        }
+        .photo-puzzle-piece:active {
+            cursor: grabbing;
+        }
+        .photo-puzzle-piece.locked {
+            cursor: default;
+            box-shadow: inset 0 0 0 3px rgba(46, 204, 113, 0.75);
+        }
+        .photo-puzzle-feedback {
+            min-height: 36px;
+            font-size: 1.35rem;
+            font-weight: 700;
+            text-align: center;
+            color: #2C5D85;
+        }
+
         /* 반응형 (세로 화면 대응) */
         @media screen and (max-width: 768px) {
             .game-main-row {
@@ -774,6 +886,13 @@
                 width: 64px;
                 height: 56px;
                 font-size: 1.7rem;
+            }
+            .photo-puzzle-stage {
+                grid-template-columns: 1fr;
+            }
+            .photo-puzzle-board,
+            .photo-puzzle-tray {
+                --puzzle-size: min(86vw, 420px);
             }
         }
     </style>
@@ -818,6 +937,10 @@
                 <button class="game-card" onclick="app.startGame('maze')">
                     <div class="card-icon-wrap">🌀</div>
                     <h2>미로찾기</h2>
+                </button>
+                <button class="game-card" onclick="app.startGame('photoPuzzle')">
+                    <div class="card-icon-wrap">🖼️</div>
+                    <h2>사진 퍼즐</h2>
                 </button>
             </div>
         </section>
@@ -1015,6 +1138,51 @@
                     </div>
 
                     <div id="maze-feedback" class="maze-feedback"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==============================
+             [사진 퍼즐 게임 화면] View 컴포넌트
+             ============================== -->
+        <section id="photo-puzzle-view" class="view">
+            <header class="game-header">
+                <button class="btn-back" onclick="app.goHome()">🏠 처음으로</button>
+                <div class="score-board">맞춘 조각: <span id="photo-puzzle-score">0</span></div>
+            </header>
+            <div class="game-content">
+                <h2 class="question-text">사진을 조각내서 다시 맞춰보세요!</h2>
+
+                <div class="photo-puzzle-panel">
+                    <div class="photo-puzzle-controls">
+                        <label class="photo-puzzle-field">
+                            사진
+                            <input id="photo-puzzle-file" type="file" accept="image/*">
+                        </label>
+                        <label class="photo-puzzle-field">
+                            줄
+                            <input id="photo-puzzle-rows" type="number" min="2" max="8" value="3">
+                        </label>
+                        <label class="photo-puzzle-field">
+                            칸
+                            <input id="photo-puzzle-cols" type="number" min="2" max="8" value="3">
+                        </label>
+                        <button class="btn-action btn-green" onclick="photoPuzzleGame.createPuzzle()">퍼즐 만들기</button>
+                        <button class="btn-action btn-yellow" onclick="photoPuzzleGame.useHint()">힌트</button>
+                    </div>
+
+                    <div class="photo-puzzle-stage">
+                        <div class="photo-puzzle-area">
+                            <h3>퍼즐판</h3>
+                            <div id="photo-puzzle-board" class="photo-puzzle-board" aria-label="사진 퍼즐판"></div>
+                        </div>
+                        <div class="photo-puzzle-area">
+                            <h3>조각</h3>
+                            <div id="photo-puzzle-tray" class="photo-puzzle-tray" aria-label="사진 퍼즐 조각"></div>
+                        </div>
+                    </div>
+
+                    <div id="photo-puzzle-feedback" class="photo-puzzle-feedback">사진을 고르고 퍼즐 만들기를 눌러주세요.</div>
                 </div>
             </div>
         </section>
@@ -1368,7 +1536,7 @@
          * [전체 앱 라우팅 로직 (SPA)]
          */
         const app = {
-            views: ['home-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view', 'sudoku-view', 'magic-view', 'maze-view'],
+            views: ['home-view', 'flag-view', 'clock-view', 'animal-view', 'sequence-view', 'sudoku-view', 'magic-view', 'maze-view', 'photo-puzzle-view'],
             
             startGame(type) {
                 if (type === 'flag') {
@@ -1392,6 +1560,9 @@
                 } else if (type === 'maze') {
                     this.showView('maze-view');
                     mazeGame.init();
+                } else if (type === 'photoPuzzle') {
+                    this.showView('photo-puzzle-view');
+                    photoPuzzleGame.init();
                 }
             },
             
@@ -1740,6 +1911,209 @@
 
             setFeedback(message) {
                 document.getElementById('maze-feedback').textContent = message;
+            }
+        };
+
+        /**
+         * [사진 퍼즐 게임 로직]
+         */
+        const photoPuzzleGame = {
+            imageUrl: '',
+            rows: 3,
+            cols: 3,
+            draggedPiece: null,
+            initialized: false,
+
+            init() {
+                if (this.initialized) return;
+                this.initialized = true;
+
+                const fileInput = document.getElementById('photo-puzzle-file');
+                fileInput.addEventListener('change', (event) => {
+                    const file = event.target.files && event.target.files[0];
+                    if (!file) return;
+
+                    if (this.imageUrl) URL.revokeObjectURL(this.imageUrl);
+                    this.imageUrl = URL.createObjectURL(file);
+                    this.setFeedback('사진이 선택됐어요. 줄과 칸을 정하고 퍼즐 만들기를 눌러주세요.');
+                });
+
+                this.prepareDropZone(document.getElementById('photo-puzzle-tray'));
+            },
+
+            createPuzzle() {
+                if (!this.imageUrl) {
+                    this.setFeedback('먼저 사진을 골라주세요.');
+                    return;
+                }
+
+                this.rows = this.readGridValue('photo-puzzle-rows');
+                this.cols = this.readGridValue('photo-puzzle-cols');
+                this.draggedPiece = null;
+
+                const board = document.getElementById('photo-puzzle-board');
+                const tray = document.getElementById('photo-puzzle-tray');
+                board.innerHTML = '';
+                tray.innerHTML = '';
+                board.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
+                board.style.gridTemplateRows = `repeat(${this.rows}, 1fr)`;
+                tray.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
+
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        const slot = document.createElement('div');
+                        slot.className = 'photo-puzzle-slot';
+                        slot.dataset.row = row;
+                        slot.dataset.col = col;
+                        this.prepareDropZone(slot);
+                        board.appendChild(slot);
+                    }
+                }
+
+                this.createShuffledPieces().forEach(piece => tray.appendChild(piece));
+                this.updateScore();
+                this.setFeedback('조각을 드래그해서 퍼즐판에 맞춰보세요.');
+            },
+
+            readGridValue(id) {
+                const input = document.getElementById(id);
+                const value = parseInt(input.value, 10);
+                const safeValue = Number.isFinite(value) ? value : 3;
+                const clamped = Math.max(2, Math.min(8, safeValue));
+                input.value = clamped;
+                return clamped;
+            },
+
+            createShuffledPieces() {
+                const pieces = [];
+
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        const piece = document.createElement('div');
+                        piece.className = 'photo-puzzle-piece';
+                        piece.draggable = true;
+                        piece.dataset.row = row;
+                        piece.dataset.col = col;
+                        piece.style.backgroundImage = `url("${this.imageUrl}")`;
+                        piece.style.backgroundSize = `${this.cols * 100}% ${this.rows * 100}%`;
+                        piece.style.backgroundPosition = `${this.cols === 1 ? 0 : (col / (this.cols - 1)) * 100}% ${this.rows === 1 ? 0 : (row / (this.rows - 1)) * 100}%`;
+                        piece.style.aspectRatio = `${this.rows} / ${this.cols}`;
+                        piece.addEventListener('dragstart', (event) => {
+                            if (piece.classList.contains('locked')) {
+                                event.preventDefault();
+                                return;
+                            }
+                            this.draggedPiece = piece;
+                        });
+                        pieces.push(piece);
+                    }
+                }
+
+                return pieces.sort(() => Math.random() - 0.5);
+            },
+
+            prepareDropZone(zone) {
+                zone.addEventListener('dragover', (event) => {
+                    event.preventDefault();
+                });
+
+                zone.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    if (!this.draggedPiece) return;
+                    this.placePiece(this.draggedPiece, zone);
+                });
+            },
+
+            placePiece(piece, target) {
+                if (piece.classList.contains('locked')) return;
+
+                const source = piece.parentElement;
+                const slot = target.classList.contains('photo-puzzle-piece') ? target.parentElement : target;
+
+                if (slot.classList.contains('photo-puzzle-slot')) {
+                    const occupyingPiece = slot.querySelector('.photo-puzzle-piece');
+                    if (occupyingPiece && occupyingPiece.classList.contains('locked')) return;
+
+                    if (occupyingPiece && occupyingPiece !== piece) {
+                        source.appendChild(occupyingPiece);
+                    }
+                }
+
+                slot.appendChild(piece);
+                this.draggedPiece = null;
+                this.updateScore();
+                this.checkComplete();
+            },
+
+            useHint() {
+                const board = document.getElementById('photo-puzzle-board');
+                const tray = document.getElementById('photo-puzzle-tray');
+                const slots = Array.from(board.querySelectorAll('.photo-puzzle-slot'));
+
+                const targetSlot = slots.find(slot => {
+                    const piece = slot.querySelector('.photo-puzzle-piece');
+                    return !piece || !this.isPieceCorrect(piece, slot);
+                });
+
+                if (!targetSlot) {
+                    this.setFeedback('이미 모든 조각이 맞았어요.');
+                    return;
+                }
+
+                const correctPiece = this.findPiece(targetSlot.dataset.row, targetSlot.dataset.col);
+                if (!correctPiece) return;
+
+                const currentPiece = targetSlot.querySelector('.photo-puzzle-piece');
+                if (currentPiece && currentPiece !== correctPiece) {
+                    tray.appendChild(currentPiece);
+                }
+
+                targetSlot.appendChild(correctPiece);
+                correctPiece.classList.add('locked');
+                correctPiece.draggable = false;
+                this.updateScore();
+                this.checkComplete();
+
+                if (!this.isComplete()) {
+                    this.setFeedback('힌트로 조각 하나를 맞췄어요.');
+                }
+            },
+
+            findPiece(row, col) {
+                return Array.from(document.querySelectorAll('.photo-puzzle-piece')).find(piece => (
+                    piece.dataset.row === String(row) && piece.dataset.col === String(col)
+                ));
+            },
+
+            isPieceCorrect(piece, slot) {
+                return piece.dataset.row === slot.dataset.row && piece.dataset.col === slot.dataset.col;
+            },
+
+            updateScore() {
+                const correctCount = Array.from(document.querySelectorAll('#photo-puzzle-board .photo-puzzle-slot')).filter(slot => {
+                    const piece = slot.querySelector('.photo-puzzle-piece');
+                    return piece && this.isPieceCorrect(piece, slot);
+                }).length;
+
+                document.getElementById('photo-puzzle-score').textContent = `${correctCount} / ${this.rows * this.cols}`;
+            },
+
+            checkComplete() {
+                if (this.isComplete()) {
+                    this.setFeedback('완성! 사진 퍼즐을 다 맞췄어요.');
+                }
+            },
+
+            isComplete() {
+                const slots = Array.from(document.querySelectorAll('#photo-puzzle-board .photo-puzzle-slot'));
+                return slots.length > 0 && slots.every(slot => {
+                    const piece = slot.querySelector('.photo-puzzle-piece');
+                    return piece && this.isPieceCorrect(piece, slot);
+                });
+            },
+
+            setFeedback(message) {
+                document.getElementById('photo-puzzle-feedback').textContent = message;
             }
         };
 
