@@ -863,6 +863,20 @@
             text-align: center;
             color: #2C5D85;
         }
+        .photo-puzzle-video-wrap {
+            width: min(86vw, 560px);
+            background: #F7FBFF;
+            border: 5px solid #BDE0FE;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            box-shadow: var(--shadow-md);
+        }
+        .photo-puzzle-video-wrap video {
+            display: block;
+            width: 100%;
+            border-radius: var(--radius-sm);
+            background: #111;
+        }
 
         /* 반응형 (세로 화면 대응) */
         @media screen and (max-width: 768px) {
@@ -1161,8 +1175,8 @@
                 <div class="photo-puzzle-panel">
                     <div class="photo-puzzle-controls">
                         <label class="photo-puzzle-field">
-                            사진
-                            <input id="photo-puzzle-file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" aria-label="갤러리에서 사진 선택">
+                            사진/동영상
+                            <input id="photo-puzzle-file" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.mp4,.mov,.webm" aria-label="갤러리에서 사진 또는 동영상 선택">
                         </label>
                         <label class="photo-puzzle-field">
                             줄
@@ -1188,6 +1202,9 @@
                     </div>
 
                     <div id="photo-puzzle-feedback" class="photo-puzzle-feedback">사진을 고르고 퍼즐 만들기를 눌러주세요.</div>
+                    <div id="photo-puzzle-video-wrap" class="photo-puzzle-video-wrap hidden">
+                        <video id="photo-puzzle-video" controls playsinline></video>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1924,6 +1941,9 @@
          */
         const photoPuzzleGame = {
             imageUrl: '',
+            sourceUrl: '',
+            videoUrl: '',
+            mediaType: '',
             rows: 3,
             cols: 3,
             draggedPiece: null,
@@ -1935,21 +1955,85 @@
                 this.initialized = true;
 
                 const fileInput = document.getElementById('photo-puzzle-file');
-                fileInput.addEventListener('change', (event) => {
+                fileInput.addEventListener('change', async (event) => {
                     const file = event.target.files && event.target.files[0];
                     if (!file) return;
 
-                    if (this.imageUrl) URL.revokeObjectURL(this.imageUrl);
-                    this.imageUrl = URL.createObjectURL(file);
-                    this.setFeedback('사진이 선택됐어요. 줄과 칸을 정하고 퍼즐 만들기를 눌러주세요.');
+                    await this.loadMediaFile(file);
                 });
 
                 this.prepareDropZone(document.getElementById('photo-puzzle-tray'));
             },
 
+            async loadMediaFile(file) {
+                this.clearMediaUrls();
+                this.hideVideoPlayer();
+                this.mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+                this.sourceUrl = URL.createObjectURL(file);
+
+                if (this.mediaType === 'video') {
+                    this.setFeedback('동영상 첫 장면으로 퍼즐을 준비하고 있어요.');
+                    try {
+                        this.imageUrl = await this.captureVideoFrame(this.sourceUrl);
+                        this.videoUrl = this.sourceUrl;
+                        this.setFeedback('동영상이 선택됐어요. 첫 장면으로 퍼즐을 만들 수 있어요.');
+                    } catch (error) {
+                        this.setFeedback('이 동영상은 첫 장면을 읽지 못했어요. 다른 영상을 골라주세요.');
+                    }
+                    return;
+                }
+
+                this.imageUrl = this.sourceUrl;
+                this.setFeedback('사진이 선택됐어요. 줄과 칸을 정하고 퍼즐 만들기를 눌러주세요.');
+            },
+
+            captureVideoFrame(videoUrl) {
+                return new Promise((resolve, reject) => {
+                    const video = document.createElement('video');
+                    const canvas = document.createElement('canvas');
+                    const timeout = window.setTimeout(() => reject(new Error('video load timeout')), 8000);
+
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.preload = 'metadata';
+                    video.src = videoUrl;
+
+                    const finish = () => {
+                        window.clearTimeout(timeout);
+                        const width = video.videoWidth || 640;
+                        const height = video.videoHeight || 360;
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                    };
+
+                    video.addEventListener('loadeddata', finish, { once: true });
+                    video.addEventListener('error', () => {
+                        window.clearTimeout(timeout);
+                        reject(new Error('video load error'));
+                    }, { once: true });
+                    video.load();
+                });
+            },
+
+            clearMediaUrls() {
+                if (this.mediaType === 'video') {
+                    this.imageUrl = '';
+                }
+
+                if (this.sourceUrl) {
+                    URL.revokeObjectURL(this.sourceUrl);
+                }
+
+                this.sourceUrl = '';
+                this.videoUrl = '';
+                this.mediaType = '';
+            },
+
             createPuzzle() {
                 if (!this.imageUrl) {
-                    this.setFeedback('먼저 사진을 골라주세요.');
+                    this.setFeedback('먼저 사진이나 동영상을 골라주세요.');
                     return;
                 }
 
@@ -1957,6 +2041,7 @@
                 this.cols = this.readGridValue('photo-puzzle-cols');
                 this.draggedPiece = null;
                 this.clearSelection();
+                this.hideVideoPlayer();
 
                 const board = document.getElementById('photo-puzzle-board');
                 const tray = document.getElementById('photo-puzzle-tray');
@@ -1979,7 +2064,7 @@
 
                 this.createShuffledPieces().forEach(piece => tray.appendChild(piece));
                 this.updateScore();
-                this.setFeedback('조각을 드래그해서 퍼즐판에 맞춰보세요.');
+                this.setFeedback('조각을 터치하거나 드래그해서 퍼즐판에 맞춰보세요.');
             },
 
             readGridValue(id) {
@@ -2140,8 +2225,38 @@
 
             checkComplete() {
                 if (this.isComplete()) {
-                    this.setFeedback('완성! 사진 퍼즐을 다 맞췄어요.');
+                    if (this.mediaType === 'video' && this.videoUrl) {
+                        this.setFeedback('완성! 이제 동영상을 볼 수 있어요.');
+                        this.showVideoPlayer();
+                    } else {
+                        this.setFeedback('완성! 사진 퍼즐을 다 맞췄어요.');
+                    }
                 }
+            },
+
+            showVideoPlayer() {
+                const wrap = document.getElementById('photo-puzzle-video-wrap');
+                const video = document.getElementById('photo-puzzle-video');
+                video.src = this.videoUrl;
+                wrap.classList.remove('hidden');
+
+                const playResult = video.play();
+                if (playResult && typeof playResult.catch === 'function') {
+                    playResult.catch(() => {
+                        this.setFeedback('완성! 재생 버튼을 누르면 동영상이 시작돼요.');
+                    });
+                }
+            },
+
+            hideVideoPlayer() {
+                const wrap = document.getElementById('photo-puzzle-video-wrap');
+                const video = document.getElementById('photo-puzzle-video');
+                if (!wrap || !video) return;
+
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+                wrap.classList.add('hidden');
             },
 
             isComplete() {

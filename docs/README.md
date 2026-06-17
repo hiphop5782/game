@@ -9,13 +9,15 @@
 - [기능명세](./FEATURE_SPECS.md): 미로찾기와 사진 퍼즐 기능 상세
 - [다음 작업](./NEXT_STEPS.md): 이어서 개선하면 좋은 작업 목록
 - [AI 작업 가이드](./AI_CODING_GUIDE.md): 다음 AI/Codex가 작업할 때 지켜야 할 기준
+- [구현 청사진](./IMPLEMENTATION_BLUEPRINT.md): DOM, CSS, JS 구조와 핵심 알고리즘 상세
+- [재현 프롬프트](./REPRODUCTION_PROMPT.md): 다른 Codex에게 그대로 전달할 수 있는 개발 지시문
+- [QA 체크리스트](./QA_CHECKLIST.md): 기능별 확인 절차와 예상 결과
 
 ## 현재 상태 요약
 
 현재 앱은 `index.html` 중심의 단일 페이지 미니게임 모음입니다. 기존 국기, 동물, 시계, 숫자 패턴, 미니 스도쿠, 마법의 숫자 게임에 더해 아래 기능이 추가되었습니다.
 
 - 미로찾기 게임
-- 사진 퍼즐 게임
+- 사진/동영상 퍼즐 게임
 
 대부분의 UI, CSS, 게임 로직이 `index.html` 안에 들어 있습니다. 일부 기존 `js/*.js`, `css/style.css` 파일도 있으나, 현재 실제로 확장된 최신 구현은 `index.html` 내부 스크립트와 스타일을 기준으로 보면 됩니다.
-

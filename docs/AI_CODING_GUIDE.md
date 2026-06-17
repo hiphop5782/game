@@ -61,10 +61,20 @@ node -e "const fs=require('fs');const html=fs.readFileSync('index.html','utf8');
 - `photoPuzzleGame`: 사진 퍼즐 로직
 - `app`: 화면 전환 라우터
 
+## 재현 가능한 개발 지시서
+
+다른 Codex에게 프로젝트를 맡길 때는 아래 문서를 함께 전달합니다.
+
+- `docs/REPRODUCTION_PROMPT.md`: 그대로 붙여넣어도 되는 개발 지시문
+- `docs/IMPLEMENTATION_BLUEPRINT.md`: 실제 DOM/CSS/JS 구조와 알고리즘 상세
+- `docs/QA_CHECKLIST.md`: 기능별 확인 항목과 예상 결과
+
+단순 요약 문서만 전달하면 구현 세부가 달라질 수 있습니다. 같은 결과를 원할 때는 반드시 위 3개 문서를 포함해야 합니다.
+
 ## 알려진 기술 부채
 
 - `index.html`이 매우 큽니다.
 - CSS와 JS가 파일별로 분리되어 있지 않습니다.
-- 사진 퍼즐의 모바일 드래그 경험은 추가 개선이 필요할 수 있습니다.
+- 사진/동영상 퍼즐은 모바일에서 `조각 선택 -> 칸 터치` 방식을 지원합니다. 더 자연스러운 실제 드래그는 Pointer Events 기반으로 추가 개선할 수 있습니다.
+- 동영상 퍼즐은 첫 프레임을 캔버스로 캡처합니다. 일부 오래된 모바일 브라우저나 특이한 코덱에서는 첫 프레임 캡처가 실패할 수 있습니다.
 - 기존 일부 파일(`css/style.css`, `js/*.js`)과 `index.html` 내부 구현 사이에 역할 중복이 있습니다.
-

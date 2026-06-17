@@ -42,3 +42,14 @@
 - 기능 확인은 사용자가 인앱 브라우저에서 `file://.../index.html`을 열어 확인하는 방식으로 진행했습니다.
 - 인앱 브라우저 자동화는 `file://` 보안 정책으로 차단될 수 있습니다. 자동 검증은 주로 스크립트 문법 검사와 내부 로직 스모크 테스트로 수행했습니다.
 
+## 다른 Codex에게 전달할 때
+
+같은 결과물을 재현해야 한다면 아래 문서를 우선순위 높게 전달하세요.
+
+1. `docs/REPRODUCTION_PROMPT.md`
+2. `docs/IMPLEMENTATION_BLUEPRINT.md`
+3. `docs/QA_CHECKLIST.md`
+4. `docs/FEATURE_SPECS.md`
+5. `docs/WORKLOG.md`
+
+특히 `IMPLEMENTATION_BLUEPRINT.md`에는 `index.html` 안에서 어떤 DOM id, CSS class, JS 객체, 알고리즘을 사용해야 하는지 상세히 적혀 있습니다.
